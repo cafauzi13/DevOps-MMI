@@ -141,3 +141,17 @@ model KuitansiTaktisDetail {
   // Relasi
   kuitansi KuitansiTaktis @relation(fields: [no_kw], references: [no_kw])
 }
+
+// ==========================================
+// 3. DATA PENGGUNA (AUTHENTICATION & RBAC)
+// ==========================================
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String   // Akan kita simpan dalam bentuk hash (bcrypt)
+  nama      String   
+  role      String   @default("STAF") // Bisa diisi: "ADMIN", "BENDAHARA", "STAF"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

@@ -10,11 +10,8 @@
   },
   "dependencies": {
     "@prisma/client": "5.22.0",
-<<<<<<< main
-=======
     "bcryptjs": "^3.0.3",
     "csv-parser": "^3.2.0",
->>>>>>> local
     "next": "16.2.4",
     "next-auth": "^4.24.14",
     "react": "19.2.4",

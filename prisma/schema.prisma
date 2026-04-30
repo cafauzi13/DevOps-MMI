@@ -1,0 +1,143 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Kita set ke postgresql karena kita mau pakai Supabase
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==========================================
+// 1. DATA MASTER & TRANSAKSI UTAMA
+// ==========================================
+
+model Pengqurban {
+  id_pengqurban String   @id @default(uuid()) // Ganti NKW jadi UUID biar aman
+  nkw           String   @unique // Tetap simpan NKW lama untuk referensi history
+  tanggal       DateTime @default(now())
+  nama          String
+  gelar_awal    String?
+  gelar_akhir   String?
+  kd_wilayah    String? // Referensi ke wilayah (bisa di hardcode di frontend)
+  no_urut       Int?
+  alamat        String?  @db.Text
+  telepon       String?
+  id_petugas    String?
+
+  // Relasi: Satu pengqurban bisa punya banyak hewan kurban
+  hewan_qurban  HewanQurban[]
+  sapi_terpisah SapiTerpisah[] // Jika dia ikut patungan sapi
+}
+
+model HewanQurban {
+  id_hewan         String   @id @default(uuid())
+  no_id_lama       String?  @unique // NoID dari MS Access
+  nkw_pengqurban   String
+  jenis_qurban     String // e.g., Sapi, Kambing
+  bentuk           String? // e.g., Hidup, Daging
+  uang             Decimal? @db.Decimal(10, 2)
+  penyembelihan    String?
+  melihat          Boolean  @default(false)
+  menyembelih      Boolean  @default(false)
+  jml_bagian       Int?
+  pembagian        String?
+  pesan_bagian     String?
+  kel_sapi         String?
+  no_uq            String?
+  penyaluran       String?
+  lokasi           String?
+  keterangan       String?  @db.Text
+  penerima         String?
+  petugas          String?
+  sebab            String?
+  no_id_surat      String?
+
+  // Relasi (Foreign Keys)
+  pengqurban Pengqurban  @relation(fields: [nkw_pengqurban], references: [nkw])
+  permohonan Permohonan? @relation(fields: [no_id_surat], references: [no_id_surat])
+}
+
+model Permohonan {
+  id_permohonan    String   @id @default(uuid())
+  no_id_surat      String   @unique // NoIDSurat dari MS Access
+  tanggal          DateTime @default(now())
+  nomor_surat      String?
+  nama_pemohon     String
+  alamat_pemohon   String?  @db.Text
+  kota_pemohon     String?
+  no_kontak        String?
+  penanggung_jawab String?
+  no_rek           String?
+  bank             String?
+  atas_nama        String?
+
+  // Relasi: Satu permohonan bisa terkait dengan banyak hewan qurban yang disalurkan
+  hewan_disalurkan HewanQurban[]
+}
+
+model SapiTerpisah {
+  id_sapi_terpisah String @id @default(uuid())
+  no_id_lama       String @unique
+  nkw_pengqurban   String
+  nama             String
+  kel_sapi         String
+  no_uq            String
+
+  // Relasi
+  pengqurban Pengqurban @relation(fields: [nkw_pengqurban], references: [nkw])
+}
+
+// ==========================================
+// 2. DATA OPERASIONAL LAPANGAN & KEUANGAN
+// ==========================================
+
+model PetugasJaga {
+  id_petugas String @id @default(uuid())
+  id_lama    String @unique // IdPetugas dari MS Access
+  nama       String
+  no_hp      String?
+
+  // Relasi
+  setoran SetorPetugasJaga[]
+}
+
+model SetorPetugasJaga {
+  id_setor   String   @id @default(uuid())
+  id_lama    String   @unique // IdSetor dari MS Access
+  id_petugas String
+  no_urut    Int?
+  tanggal    DateTime @default(now())
+  nama       String
+  jml_setor  Decimal  @db.Decimal(10, 2)
+  keterangan String?  @db.Text
+
+  // Relasi
+  petugas PetugasJaga @relation(fields: [id_petugas], references: [id_lama])
+}
+
+model KuitansiTaktis {
+  id_kuitansi       String   @id @default(uuid())
+  no_kw             String   @unique // NoKW dari MS Access
+  tanggal           DateTime @default(now())
+  penanggung_jawab  String
+
+  // Relasi
+  detail_kuitansi KuitansiTaktisDetail[]
+}
+
+model KuitansiTaktisDetail {
+  id_detail  String  @id @default(uuid())
+  no_kw      String
+  pos        String?
+  uraian     String? @db.Text
+  debit      Decimal @default(0) @db.Decimal(12, 2)
+  kredit     Decimal @default(0) @db.Decimal(12, 2)
+
+  // Relasi
+  kuitansi KuitansiTaktis @relation(fields: [no_kw], references: [no_kw])
+}

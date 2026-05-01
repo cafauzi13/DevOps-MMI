@@ -19,7 +19,6 @@ function parseDate(dateStr: string) {
 }
 
 // Fungsi bantuan baca boolean dari MS Access (-1 = True, 0 = False)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseBool(val: any) {
   if (!val) return false;
   const str = String(val).toLowerCase().trim();
@@ -27,10 +26,8 @@ function parseBool(val: any) {
 }
 
 // Fungsi modular buat ngebaca CSV biar rapi
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function readCSV(fileName: string): Promise<any[]> {
   const filePath = path.join(__dirname, 'csv', fileName);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const results: any[] = [];
   return new Promise((resolve, reject) => {
     if (!fs.existsSync(filePath)) {
@@ -42,7 +39,7 @@ function readCSV(fileName: string): Promise<any[]> {
       .pipe(csv({ separator: ',' })) // Pastikan file CSV sisa juga pake koma
       .on('data', (data) => results.push(data))
       .on('end', () => resolve(results))
-      .on('error', (err) => reject(err));
+      .on('error', (err: any) => reject(err));
   });
 }
 
@@ -75,7 +72,9 @@ async function main() {
         }
       });
       countPermohonan++;
-    } catch (e) { }
+    } catch {
+      // Lewati jika ada error
+    }
   }
   console.log(`✅ Berhasil insert ${countPermohonan} data Permohonan.`);
 
@@ -115,7 +114,7 @@ async function main() {
         }
       });
       countHewan++;
-    } catch (e) {
+    } catch {
       // Lewati kalau nkw pengqurban-nya belum ada di database
     }
   }
@@ -141,7 +140,9 @@ async function main() {
         }
       });
       countSapiTerpisah++;
-    } catch (e) { }
+    } catch {
+      // Lewati jika ada error
+    }
   }
   console.log(`✅ Berhasil insert ${countSapiTerpisah} data Sapi Terpisah.`);
 
@@ -163,7 +164,9 @@ async function main() {
         }
       });
       countPetugas++;
-    } catch (e) { }
+    } catch {
+      // Lewati jika ada error
+    }
   }
   console.log(`✅ Berhasil insert ${countPetugas} data Petugas Jaga.`);
 

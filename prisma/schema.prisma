@@ -17,21 +17,26 @@ datasource db {
 // ==========================================
 
 model Pengqurban {
-  id_pengqurban String   @id @default(uuid()) // Ganti NKW jadi UUID biar aman
-  nkw           String   @unique // Tetap simpan NKW lama untuk referensi history
-  tanggal       DateTime @default(now())
-  nama          String
-  gelar_awal    String?
-  gelar_akhir   String?
-  kd_wilayah    String? // Referensi ke wilayah (bisa di hardcode di frontend)
-  no_urut       Int?
-  alamat        String?  @db.Text
-  telepon       String?
-  id_petugas    String?
+  id_pengqurban  String   @id @default(uuid())
+  nkw            String   @unique 
+  tanggal        DateTime @default(now())
+  
+  // Revisi Form: Langsung 1 kolom nama lengkap & nambah gender
+  nama_lengkap   String
+  jenis_kelamin  String?  // Isinya "L" atau "P"
+  
+  kd_wilayah     String? 
+  no_urut        Int?
+  alamat         String?  @db.Text
+  telepon        String?
+  
+  // Relasi ke tabel PetugasJaga
+  id_petugas     String?
+  petugas        PetugasJaga? @relation(fields: [id_petugas], references: [id_petugas])
 
-  // Relasi: Satu pengqurban bisa punya banyak hewan kurban
-  hewan_qurban  HewanQurban[]
-  sapi_terpisah SapiTerpisah[] // Jika dia ikut patungan sapi
+  // Relasi Hewan
+  hewan_qurban   HewanQurban[]
+  sapi_terpisah  SapiTerpisah[] 
 }
 
 model HewanQurban {
@@ -102,8 +107,9 @@ model PetugasJaga {
   nama       String
   no_hp      String?
 
-  // Relasi
-  setoran SetorPetugasJaga[]
+  // Relasi (Wajib ditulis dua arah biar Prisma seneng)
+  setoran    SetorPetugasJaga[]
+  pengqurban Pengqurban[]
 }
 
 model SetorPetugasJaga {

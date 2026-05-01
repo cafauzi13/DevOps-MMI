@@ -1,0 +1,19 @@
+"ID","JUDUL","NAMA"
+0,"DAFTAR MENU",
+1,"  1. Transaksi","fqurban"
+2,"  2. Hasil Himpun","hasilhimpun"
+3,"  3. Tren Qurban","trenqurban"
+4,"  4. Pindah Lokasi","rubahlokasi"
+5,"  5. Keuangan","kwtaktis"
+6,"  6. Cetak Laporan","fcetak"
+7,"  7. Surat Permohonan","permohonan"
+8,"  8. Riwayat Berqurban","sejarah"
+9,"  9. Hari Raya","fhariraya"
+10,"10. Cek Antar Bagian",
+11,"     10.1. Input Cek Antar Bagian","cekantarbagian"
+12,"     10.2. Detail Cek Antar Bagian","cekantarbagian1"
+13,"11. Identitas Sapi Terpisah","fidsapiterpisah"
+14,"12. Petugas Jaga","fpetugasjaga"
+15,"13. Setoran Petugas Jaga","fsetorpetugasjagarekaptunai2"
+16,"13. Mutiara","fmutiara"
+17,"KELUAR",

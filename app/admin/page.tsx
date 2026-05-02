@@ -2,10 +2,15 @@ import { getPengqurban } from "@/app/actions/pengqurban";
 import { getHewanQurban } from "@/app/actions/hewan";
 import { Users, Activity, TrendingUp, HeartHandshake } from "lucide-react";
 
-export default async function AdminDashboardPage() {
-  // 1. Tarik semua data pakai fungsi yang udah kita bikin
-  const resPengqurban = await getPengqurban();
-  const resHewan = await getHewanQurban();
+// 👉 1. PASANG ANTENA props searchParams
+export default async function AdminDashboardPage(props: { searchParams: Promise<{ year?: string }> }) {
+  // 👉 2. TANGKAP TAHUN DARI URL
+  const searchParams = await props.searchParams;
+  const year = searchParams.year || "Semua";
+
+  // 👉 3. LEMPAR TAHUNNYA KE BACKEND (Parameter pertama dikosongin aja "" karena kita nggak butuh search teks di dashboard)
+  const resPengqurban = await getPengqurban("", year);
+  const resHewan = await getHewanQurban("", year);
 
   const pengqurbans = resPengqurban.data || [];
   const hewans = resHewan.data || [];
@@ -129,6 +134,11 @@ export default async function AdminDashboardPage() {
                 </div>
               </div>
             ))}
+            {recentPengqurban.length === 0 && (
+              <div className="text-center py-8 text-gray-500 text-sm font-medium">
+                Belum ada pendaftar di tahun ini.
+              </div>
+            )}
           </div>
         </div>
 

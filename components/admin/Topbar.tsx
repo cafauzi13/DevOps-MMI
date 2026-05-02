@@ -1,9 +1,10 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-import { Bell, UserCircle, Calendar, ChevronDown } from "lucide-react"; // Tambah ChevronDown
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Bell, UserCircle, Calendar, ChevronDown } from "lucide-react"; 
 import { setYearFilter } from "@/app/actions/filter";
 import { useState } from "react";
+import { generateHijriYearList } from "@/app/lib/hijri";
 
 export default function Topbar({ 
   userName, 
@@ -15,10 +16,17 @@ export default function Topbar({
   initialYear?: string 
 }) {
   const pathname = usePathname();
-  const [activeYear, setActiveYear] = useState(initialYear);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false); // State buat buka-tutup menu
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const yearOptions = ["Semua", "2026", "2025", "2024"]; // Daftar opsi tahun
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // 👉 Bikin array list tahun yang bener (ditambah "Semua" di awal)
+  const dynamicYears = generateHijriYearList();
+  const yearList = ["Semua", ...dynamicYears]; 
+
+  // 👉 Ambil activeYear langsung dari URL biar sinkron 100%
+  const activeYear = searchParams.get("year") || initialYear;
 
   const getPageTitle = () => {
     if (pathname === "/admin") return "Dashboard Utama";
@@ -27,11 +35,25 @@ export default function Topbar({
     return "Sistem Qurban RDK 47";
   };
 
-  // Fungsi ganti tahun yang baru
+  // Fungsi ganti tahun yang beneran ngubah URL!
   const handleYearChange = async (year: string) => {
-    setActiveYear(year);
     setIsDropdownOpen(false); // Tutup dropdown habis milih
-    await setYearFilter(year); 
+    
+    // 1. UPDATE URL PARAMS BIAR HALAMAN REFRESH DATANYA
+    const params = new URLSearchParams(searchParams.toString());
+    if (year === "Semua") {
+      params.delete("year");
+    } else {
+      params.set("year", year);
+    }
+    router.push(`${pathname}?${params.toString()}`);
+
+    // 2. FUNGSI BAWAAN KAMU TETEP JALAN
+    try {
+      await setYearFilter(year); 
+    } catch (error) {
+      console.error("Gagal set year filter action", error);
+    }
   };
 
   return (
@@ -49,7 +71,7 @@ export default function Topbar({
           >
             <Calendar size={16} className="text-mmi" />
             <span className="font-bold text-gray-700">
-              {activeYear === "Semua" ? "Semua Waktu" : `Tahun ${activeYear}`}
+              {activeYear === "Semua" ? "Semua Waktu" : `Tahun ${activeYear} H`}
             </span>
             <ChevronDown 
               size={16} 
@@ -60,7 +82,7 @@ export default function Topbar({
           {/* Menu Dropdown yang Melayang */}
           {isDropdownOpen && (
             <div className="absolute top-full right-0 mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-xl shadow-gray-200/50 overflow-hidden z-50 py-1 animate-in fade-in slide-in-from-top-2">
-              {yearOptions.map((year) => (
+              {yearList.map((year: string) => (
                 <button
                   key={year}
                   onClick={() => handleYearChange(year)}
@@ -68,8 +90,8 @@ export default function Topbar({
                     activeYear === year ? "bg-mmi/5 text-mmi font-bold" : "text-gray-600"
                   }`}
                 >
-                  {year === "Semua" ? "Semua Waktu" : `Tahun ${year}`}
-                  {/* Kasih titik ijo kalau lagi dipilih */}
+                  {year === "Semua" ? "Semua Waktu" : `Tahun ${year} H`}
+                  
                   {activeYear === year && (
                     <div className="w-1.5 h-1.5 rounded-full bg-mmi"></div>
                   )}
@@ -88,7 +110,8 @@ export default function Topbar({
         <div className="flex items-center gap-3 border-l border-gray-200 pl-6">
           <div className="text-right hidden md:block">
             <p className="text-sm font-bold text-admin-text leading-tight">{userName || "User"}</p>
-            <p className="text-xs text-mmi font-medium">{userRole || "Staf"}</p>
+            {/* Aku panggil relasi jabatan kamu di sertifikat buat nampilin rolenya sekalian kalau kosong wkwkwk */}
+            <p className="text-xs text-mmi font-medium">{userRole || "STAFF"}</p>
           </div>
           <div className="w-9 h-9 bg-mmi-light rounded-full flex items-center justify-center text-mmi">
             <UserCircle size={24} />

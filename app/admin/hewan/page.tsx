@@ -1,8 +1,16 @@
 import { getHewanQurban } from "@/app/actions/hewan";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import SearchBar from "@/components/admin/SearchBar";
+import HewanActionButtons from "@/components/admin/HewanActionButtons";
 
-export default async function HewanPage() {
-  const response = await getHewanQurban();
+// 🚀 Tangkap 'searchParams' dari URL biar fitur Search-nya jalan!
+export default async function PengqurbanPage(props: { searchParams: Promise<{ q?: string; year?: string }> }) {
+  const searchParams = await props.searchParams;
+  const query = searchParams.q || "";
+  
+  // Masukin query-nya ke mesin!
+  const year = searchParams.year || "Semua"; 
+  const response = await getHewanQurban(query, year);
   const hewans = response.data || [];
 
   return (
@@ -24,14 +32,8 @@ export default async function HewanPage() {
         
         {/* Toolbar */}
         <div className="p-5 border-b border-gray-100 flex gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input 
-              type="text" 
-              placeholder="Cari jenis hewan atau nama shohibul..." 
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-mmi/20 focus:border-mmi text-sm transition-all"
-            />
-          </div>
+          {/* Panggil SearchBar Component kita di sini! */}
+          <SearchBar placeholder="Cari No ID, kelompok, atau nama shohibul..." />
         </div>
 
         {/* Tabel Data */}
@@ -40,6 +42,7 @@ export default async function HewanPage() {
             <thead className="bg-gray-50 text-gray-600 font-semibold border-b border-gray-100">
               <tr>
                 <th className="px-6 py-4">No</th>
+                <th className="px-6 py-4">ID Hewan</th>
                 <th className="px-6 py-4">Jenis</th>
                 <th className="px-6 py-4">Atas Nama (Shohibul)</th>
                 <th className="px-6 py-4">Bentuk</th>
@@ -51,52 +54,42 @@ export default async function HewanPage() {
             <tbody className="divide-y divide-gray-100 text-gray-700">
               {hewans.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center text-gray-500 font-medium">
-                    Belum ada data hewan qurban.
+                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500 font-medium">
+                    {query ? `Tidak ada hewan yang cocok dengan pencarian "${query}"` : "Belum ada data hewan qurban."}
                   </td>
                 </tr>
               ) : (
                 hewans.map((item, index) => (
                   <tr key={item.id_hewan} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">{index + 1}</td>
+                    
+                    {/* Tambahan Kolom ID Biar Gampang Nyarinya */}
+                    <td className="px-6 py-4 font-mono text-xs text-emerald-600 bg-emerald-50 rounded-md my-4 inline-block px-2 border border-emerald-100">
+                      {item.no_id_lama || "-"}
+                    </td>
+
                     <td className="px-6 py-4">
                       {(() => {
-                        // Kacamata Penerjemah Kode Access
                         let label = item.jenis_qurban;
-                        const colorClass = "bg-gray-50 text-gray-600"; // kalau nanti mau kasih warna beda per jenis, tinggal ganti ini aja pake "let"
-
-                        if (item.jenis_qurban === "1" || item.jenis_qurban.toLowerCase() === "kambing") {
-                          label = "🐐 Kambing";
-                        //   colorClass = "bg-orange-50 text-orange-600";
-                        } else if (item.jenis_qurban === "2" || item.jenis_qurban.toLowerCase() === "sapi") {
-                          label = "🐄 Sapi";
-                        //   colorClass = "bg-blue-50 text-blue-600";
-                        } else if (item.jenis_qurban === "3") {
-                          label = "🐄 Sapi (Patungan)";
-                        //   colorClass = "bg-purple-50 text-purple-600"; // Kita kasih warna ungu buat patungan!
-                        }
-
-                        return (
-                          <span className={`px-3 py-1.5 rounded-full font-bold text-xs ${colorClass}`}>
-                            {label}
-                          </span>
-                        );
+                        const colorClass = "bg-gray-50 text-gray-600"; 
+                        if (item.jenis_qurban === "1" || item.jenis_qurban.toLowerCase() === "kambing") label = "🐐 Kambing";
+                        else if (item.jenis_qurban === "2" || item.jenis_qurban.toLowerCase() === "sapi") label = "🐄 Sapi";
+                        else if (item.jenis_qurban === "3") label = "🐄 Sapi (Patungan)";
+                        
+                        return <span className={`px-3 py-1.5 rounded-full font-bold text-xs ${colorClass}`}>{label}</span>;
                       })()}
                     </td>
                     <td className="px-6 py-4 font-bold text-admin-text truncate max-w-[250px]">
                       {item.pengqurban?.nama_lengkap || "Tanpa Nama"}
+                      {item.kel_sapi && <span className="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full uppercase">{item.kel_sapi}</span>}
                     </td>
-                    <td className="px-6 py-4">{item.bentuk || "-"}</td>
-                    <td className="px-6 py-4 truncate max-w-[200px]">{item.penyaluran || "Internal MMI"}</td>
+                    <td className="px-6 py-4 font-bold text-gray-500">{item.bentuk || "-"}</td>
+                    <td className="px-6 py-4 truncate max-w-[200px]">{item.penyaluran || "INTERNAL MMI"}</td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-2">
-                        <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit">
-                          <Edit size={16} />
-                        </button>
-                        <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Hapus">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
+                      
+                      {/* 🚀 PANGGIL KOMPONEN TOMBOL AKSI KITA! */}
+                      <HewanActionButtons data={JSON.parse(JSON.stringify(item))} />
+
                     </td>
                   </tr>
                 ))
@@ -107,12 +100,7 @@ export default async function HewanPage() {
         
         {/* Pagination Dummy */}
         <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between text-sm text-gray-500 gap-4">
-          <p>Menampilkan 1 hingga {hewans.length > 10 ? 10 : hewans.length} dari {hewans.length} data</p>
-          <div className="flex gap-1">
-            <button className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors" disabled>Prev</button>
-            <button className="px-3 py-1.5 bg-mmi text-white rounded-lg font-medium shadow-sm shadow-mmi/20">1</button>
-            <button className="px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition-colors" disabled>Next</button>
-          </div>
+          <p>Menampilkan {hewans.length} data</p>
         </div>
 
       </div>

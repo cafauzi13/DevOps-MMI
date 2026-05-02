@@ -1,12 +1,18 @@
 import { getPengqurban } from "@/app/actions/pengqurban";
-import { Plus, Search, Edit, Trash2 } from "lucide-react";
+import { Search } from "lucide-react";
 import FormPengqurbanDrawer from "@/components/admin/FormPengqurbanDrawer";
 import PengqurbanActionButtons from "@/components/admin/PengqurbanActionButtons";
 
-// Perhatikan ada kata "async" di sini karena kita mau narik data dari database!
-export default async function PengqurbanPage() {
-  // Panggil fungsi sakti backend kita
-  const response = await getPengqurban();
+// 👉 PERHATIKAN BARIS INI: Kita pasang antena "props" buat nangkep URL params
+export default async function PengqurbanPage(props: { searchParams: Promise<{ q?: string, year?: string }> }) {
+  
+  // 👉 NANGKEP TAHUN & QUERY DARI URL
+  const searchParams = await props.searchParams;
+  const query = searchParams.q || "";
+  const year = searchParams.year || "Semua";
+
+  // 👉 PANGGIL FUNGSI SAKTI BACKEND (Sekarang dilemparin query & year-nya)
+  const response = await getPengqurban(query, year);
   const pengqurbans = response.data || [];
 
   return (
@@ -73,7 +79,7 @@ export default async function PengqurbanPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                       <PengqurbanActionButtons nkw={item.nkw} />
+                       <PengqurbanActionButtons data={JSON.parse(JSON.stringify(item))} />
                     </td>
                   </tr>
                 ))

@@ -1,45 +1,37 @@
 "use server";
 
 import { PrismaClient } from "@prisma/client";
-import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 
 const prisma = new PrismaClient();
 
-export async function getPengqurban() {
+export async function getPengqurban(query: string = "", yearFilter: string = "") {
   try {
-    // 1. Baca cookie 'selectedYear', default-nya 'Semua' kalau belum milih
-    const cookieStore = await cookies();
-    const selectedYear = cookieStore.get("selectedYear")?.value || "Semua";
-
-    // 2. Siapin filter (Where Clause)
-    let whereClause = {};
-    
-    if (selectedYear !== "Semua") {
-      const yearInt = parseInt(selectedYear);
-      whereClause = {
-        tanggal: {
-          // Cari data dari 1 Januari tahun terpilih, sampai sebelum 1 Januari tahun depannya
-          gte: new Date(`${yearInt}-01-01T00:00:00.000Z`),
-          lt: new Date(`${yearInt + 1}-01-01T00:00:00.000Z`),
-        }
-      };
-    }
-
-    // 3. Tarik data dengan filter yang udah disiapin
     const data = await prisma.pengqurban.findMany({
-      where: whereClause, // <--- Tempel filternya di sini
-      orderBy: { tanggal: 'desc' },
+      where: {
+        AND: [
+          query ? {
+            OR: [
+              { nkw: { contains: query, mode: 'insensitive' } },
+              { nama_lengkap: { contains: query, mode: 'insensitive' } },
+            ]
+          } : {},
+          (yearFilter && yearFilter !== "Semua") ? {
+             nkw: { startsWith: yearFilter } 
+          } : {}
+        ]
+      },
+      // ✨ INI OBATNYA BIAR ERROR HILANG ✨
       include: {
-        hewan_qurban: true,
-        sapi_terpisah: true,
-      }
+        hewan_qurban: true 
+      },
+      orderBy: { nkw: 'desc' }
     });
-
+    
     return { success: true, data: data };
   } catch (error) {
     console.error("Gagal narik data pengqurban:", error);
-    return { success: false, message: "Gagal mengambil data." };
+    return { success: false, data: [] };
   }
 }
 
@@ -87,6 +79,7 @@ export async function updatePengqurban(nkwLama: string, formData: any) {
     await prisma.pengqurban.update({
       where: { nkw: nkwLama },
       data: {
+        no_urut: formData.no_urut ? parseInt(formData.no_urut) : null,
         nama_lengkap: formData.nama_lengkap,
         jenis_kelamin: formData.jenis_kelamin || null,
         telepon: formData.telepon || null,

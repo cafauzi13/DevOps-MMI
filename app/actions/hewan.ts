@@ -122,12 +122,12 @@ export async function deleteHewan(id_hewan: string) {
 }
 
 // ==========================================
-// 4. FUNGSI BACA DATA HEWAN (GET + SEARCHING) 📖
+// 4. FUNGSI BACA DATA HEWAN (GET + SEARCHING + AUTO GROUPING 🐄🤝) 
 // ==========================================
-// Sekarang dia bisa nerima 'query' buat filter data!
 export async function getHewanQurban(query: string = "", yearFilter: string = "") {
   try {
-    const data = await prisma.hewanQurban.findMany({
+    // 1. Tarik data mentah dari database (Logic Prisma tetep sama)
+    const rawData = await prisma.hewanQurban.findMany({
       where: {
         AND: [
           query ? {
@@ -137,9 +137,6 @@ export async function getHewanQurban(query: string = "", yearFilter: string = ""
               { no_id_lama: { contains: query, mode: 'insensitive' } }
             ]
           } : {},
-          
-          // 2. Filter Tahun Hijriyah 🔑
-          // Kalau difilter tahunnya, dan BUKAN "Semua", cari ID yang depannya tahun itu!
           (yearFilter && yearFilter !== "Semua") ? {
             no_id_lama: { startsWith: yearFilter }
           } : {}
@@ -147,13 +144,72 @@ export async function getHewanQurban(query: string = "", yearFilter: string = ""
       },
       include: {
         pengqurban: {
-          select: { nama_lengkap: true } 
+          select: { 
+            nama_lengkap: true, 
+            alamat: true
+          } 
         }
       },
       orderBy: { no_id_lama: 'desc' }
     });
-    
-    return { success: true, data: data };
+
+    // 2. 🪄 PROSES AUTO-GROUPING
+    const groupedData: any[] = [];
+    const sapiPatunganMap = new Map<string, any>();
+
+    for (const item of rawData) {
+      // Asumsi "3" adalah value untuk Sapi Patungan. 
+      // Kalau bapaknya masukin kel_sapi, kita proses grouping!
+      if (item.jenis_qurban === "3" && item.kel_sapi) {
+        const groupKey = item.kel_sapi.toUpperCase(); // Biar seragam (A, B, C)
+        
+        if (!sapiPatunganMap.has(groupKey)) {
+          // Kalau kelompok ini belum ada, kita bikin "Wadah" (Virtual Row) baru
+          const newGroup = {
+            ...item, // Copy data dasar dari anggota pertama
+            id_hewan: `GROUP_${groupKey}`, // ID unik virtual buat ngerender key React
+            no_id_lama: `KELOMPOK ${groupKey}`, // Biar di tabel tampilannya KELOMPOK A
+            isGroup: true, // 🚩 TANDA PENTING: Flag buat ngasih tau frontend kalau ini grup!
+            members: [item], // Simpan data asli Bapak ke-1 di sini
+            pengqurban: {
+              ...item.pengqurban,
+              nama_lengkap: `Sapi Patungan Kelompok ${groupKey}` // Nama sementara
+            }
+          };
+          sapiPatunganMap.set(groupKey, newGroup);
+          groupedData.push(newGroup); // Masukin wadah ini ke antrean utama
+        } else {
+          // Kalau wadahnya udah ada, masukin aja bapak ini ke daftar members
+          const existingGroup = sapiPatunganMap.get(groupKey);
+          existingGroup.members.push(item);
+        }
+      } else {
+        // Kalau Kambing, Sapi Utuh, atau ga ada kelompok, biarin jalan normal (Individu)
+        groupedData.push(item);
+      }
+    }
+
+    // 3. 🎨 FINISHING: Update label jumlah orang di grup
+    for (const group of sapiPatunganMap.values()) {
+      group.pengqurban.nama_lengkap = `Sapi Patungan Kel. ${group.kel_sapi} (${group.members.length} Orang)`;
+      
+      // Ambil bentuk dari anggota pertama sbg default tabel
+      group.bentuk = group.members[0].bentuk || "-";
+      
+      // 👇 LOGIC PENYALURAN DINAMIS 👇
+      // Kita kumpulin semua data penyaluran dari tiap anggota, terus kita saring biar nggak ada yang dobel (pakai Set)
+      const semuaPenyaluran = Array.from(new Set(group.members.map((m: any) => m.penyaluran || "INTERNAL MMI")));
+      
+      if (semuaPenyaluran.length === 1) {
+        // Kalau isinya cuma 1 macem (berarti 7 orang sepakat semua)
+        group.penyaluran = semuaPenyaluran[0]; 
+      } else {
+        // Kalau isinya lebih dari 1 (berarti ada yang beda-beda)
+        group.penyaluran = "Campuran (Internal & Luar)";
+      }
+    }
+
+    return { success: true, data: groupedData };
   } catch (error) {
     console.error("Gagal narik data hewan:", error);
     return { success: false, data: [] };

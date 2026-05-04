@@ -64,8 +64,10 @@ export default async function PengqurbanPage(props: { searchParams: Promise<{ q?
                     <td className="px-6 py-4">{index + 1}</td>
                     
                     {/* Tambahan Kolom ID Biar Gampang Nyarinya */}
-                    <td className="px-6 py-4 font-mono text-xs text-emerald-600 bg-emerald-50 rounded-md my-4 inline-block px-2 border border-emerald-100">
-                      {item.no_id_lama || "-"}
+                    <td className="px-6 py-4 align-middle">
+                      <span className="font-mono text-xs text-emerald-600 bg-emerald-50 rounded-md px-2 py-1 border border-emerald-100 inline-block">
+                        {item.no_id_lama || "-"}
+                      </span>
                     </td>
 
                     <td className="px-6 py-4">
@@ -79,9 +81,34 @@ export default async function PengqurbanPage(props: { searchParams: Promise<{ q?
                         return <span className={`px-3 py-1.5 rounded-full font-bold text-xs ${colorClass}`}>{label}</span>;
                       })()}
                     </td>
-                    <td className="px-6 py-4 font-bold text-admin-text truncate max-w-[250px]">
-                      {item.pengqurban?.nama_lengkap || "Tanpa Nama"}
-                      {item.kel_sapi && <span className="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full uppercase">{item.kel_sapi}</span>}
+                    {/* KOLOM ATAS NAMA (SHOHIBUL) */}
+                    <td className="px-6 py-4 text-admin-text align-middle">
+                      {item.isGroup ? (
+                        <div className="flex flex-col gap-1.5 py-1">
+                          <span 
+                            className={`font-bold text-sm px-3 py-1 rounded-md w-fit border ${
+                              item.members?.length >= 7 
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100' // Hijau kalau udah 7 orang
+                                : 'bg-orange-50 text-orange-700 border-orange-100'    // Oranye kalau kurang
+                            }`}
+                          >
+                            Sapi Patungan Kelompok {item.kel_sapi}: {item.members?.length >= 7 ? '(Lengkap ✅)' : `(Kurang ${7 - item.members?.length})`}
+                          </span>
+                          <ul className="text-xs text-gray-600 space-y-1 pl-1 mt-1">
+                            {item.members?.map((member: any, i: number) => (
+                              <li key={member.id_hewan} className="flex items-start gap-1.5">
+                                <span className="font-medium text-gray-400">{i + 1}.</span> 
+                                <span className="font-bold truncate max-w-[220px]">{member.pengqurban?.nama_lengkap || "Tanpa Nama"}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div className="font-bold truncate max-w-[250px]">
+                          {item.pengqurban?.nama_lengkap || "Tanpa Nama"}
+                          {item.kel_sapi && <span className="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full uppercase">{item.kel_sapi}</span>}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 font-bold text-gray-500">{item.bentuk || "-"}</td>
                     <td className="px-6 py-4 truncate max-w-[200px]">{item.penyaluran || "INTERNAL MMI"}</td>

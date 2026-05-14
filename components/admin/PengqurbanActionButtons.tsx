@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Trash2, Edit, AlertTriangle, Loader2, X, Save, User, Phone, MapPin, Hash, Map, BadgeCheck, Search, Users, ChevronDown, PlusCircle } from "lucide-react";
+import { Trash2, Edit, AlertTriangle, Loader2, X, Save, User, Phone, MapPin, Hash, Map, BadgeCheck, Search, Users, ChevronDown } from "lucide-react";
 import { deletePengqurban, updatePengqurban } from "@/app/actions/pengqurban";
-import { createHewan } from "@/app/actions/hewan";
 import { getPetugasJaga } from "@/app/actions/petugas";
 import toast from "react-hot-toast";
+import FormHewanDrawer from "./FormHewanDrawer"; // ✨ IMPORT SUPER FORM KITA DI SINI
 
 // ==========================================
 // 🌟 HELPER DATA & FUNGSI FORMATTING
@@ -17,15 +17,12 @@ export default function PengqurbanActionButtons({ data }: { data: any }) {
   const nkwLama = data.nkw; 
   
   // ==========================================
-  // 📦 STATE MANAGEMENT 
+  // 📦 STATE MANAGEMENT (KHUSUS EDIT & DELETE ORANG SAJA)
   // ==========================================
-  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAddHewanOpen, setIsAddHewanOpen] = useState(false);
-  const [isSubmittingHewan, setIsSubmittingHewan] = useState(false);
 
   const [noUrut, setNoUrut] = useState(data.no_urut || "");
   const [namaLengkap, setNamaLengkap] = useState(data.nama_lengkap || "");
@@ -43,38 +40,9 @@ export default function PengqurbanActionButtons({ data }: { data: any }) {
   const [isWilayahOpen, setIsWilayahOpen] = useState(false);
   const [showPetugasDropdown, setShowPetugasDropdown] = useState(false);
 
-  // ✨ STATE BARU: Buat ngontrol custom dropdown mana yang lagi kebuka di Form Hewan
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  const [hwn, setHwn] = useState({
-    jenis_qurban: "1", 
-    bentuk: "UANG",    
-    uang: "",
-    penyembelihan: "",
-    melihat: "TIDAK",  
-    menyembelih: "TIDAK", 
-    jml_bagian: "",
-    pembagian: "",
-    pesan_bagian: "",
-    kel_sapi: "",
-    no_uq: "",
-    penyaluran: "DALAM", 
-    lokasi: "",
-    keterangan: "",
-    penerima: "",
-    petugas: "",
-    sebab: "",
-    no_id_surat: ""
-  });
-
   // ==========================================
-  // ⚙️ LOGIKA & FUNGSI-FUNGSI (ACTIONS)
+  // ⚙️ LOGIKA & FUNGSI-FUNGSI
   // ==========================================
-
-  const handleChangeHwn = (e: any) => {
-    setHwn({ ...hwn, [e.target.name]: e.target.value.toUpperCase() });
-  };
-
   useEffect(() => {
     if (isEditOpen && dbPetugas.length === 0) {
       getPetugasJaga().then((res) => {
@@ -130,27 +98,12 @@ export default function PengqurbanActionButtons({ data }: { data: any }) {
     setIsDeleting(false);
   };
 
-  const executeAddHewan = async () => {
-    setIsSubmittingHewan(true);
-    const toastId = toast.loading("Menyimpan data hewan...");
-
-    const res = await createHewan({ ...hwn, nkw_pengqurban: nkwLama });
-
-    if (res.success) {
-      toast.success(res.message, { id: toastId });
-      setIsAddHewanOpen(false); 
-    } else {
-      toast.error(res.message, { id: toastId });
-    }
-    setIsSubmittingHewan(false);
-  };
-
   return (
     <>
       <div className="flex items-center gap-2">
-        <button onClick={() => setIsAddHewanOpen(true)} className="p-2 text-emerald-500 hover:bg-emerald-50 rounded-lg transition-colors border border-emerald-100 bg-emerald-50/50" title="Tambah Hewan Qurban">
-          <PlusCircle size={18} />
-        </button>
+        {/* ✨ INI DIA MAGIC-NYA! Panggil Super Form dengan prop defaultNkw */}
+        <FormHewanDrawer defaultNkw={nkwLama} />
+        
         <button onClick={() => setIsEditOpen(true)} className="p-2 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Data">
           <Edit size={18} />
         </button>
@@ -239,20 +192,8 @@ export default function PengqurbanActionButtons({ data }: { data: any }) {
               
               {isGenderOpen && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden flex flex-col py-1 animate-in fade-in slide-in-from-top-2">
-                  <button 
-                    type="button" 
-                    onClick={() => { setSelectedGender("L"); setIsGenderOpen(false); }} 
-                    className="w-full text-left px-4 py-2.5 text-sm flex-none hover:bg-blue-50 hover:text-blue-500 font-medium transition-colors"
-                  >
-                    Laki-laki
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => { setSelectedGender("P"); setIsGenderOpen(false); }} 
-                    className="w-full text-left px-4 py-2.5 text-sm flex-none hover:bg-blue-50 hover:text-blue-500 font-medium transition-colors"
-                  >
-                    Perempuan
-                  </button>
+                  <button type="button" onClick={() => { setSelectedGender("L"); setIsGenderOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm flex-none hover:bg-blue-50 hover:text-blue-500 font-medium transition-colors">Laki-laki</button>
+                  <button type="button" onClick={() => { setSelectedGender("P"); setIsGenderOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm flex-none hover:bg-blue-50 hover:text-blue-500 font-medium transition-colors">Perempuan</button>
                 </div>
               )}
             </div>
@@ -284,12 +225,7 @@ export default function PengqurbanActionButtons({ data }: { data: any }) {
               {isWilayahOpen && (
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg max-h-56 overflow-y-auto flex flex-col py-1 animate-in fade-in slide-in-from-top-2">
                   {wilayahCodes.map((kode) => (
-                    <button 
-                      key={kode} 
-                      type="button"
-                      onClick={() => { setSelectedWilayah(kode); setIsWilayahOpen(false); }} 
-                      className={`w-full text-left px-4 py-2.5 text-sm flex-none transition-colors ${selectedWilayah === kode ? 'bg-blue-50 text-blue-500 font-bold' : 'hover:bg-gray-50 text-gray-700'}`}
-                    >
+                    <button key={kode} type="button" onClick={() => { setSelectedWilayah(kode); setIsWilayahOpen(false); }} className={`w-full text-left px-4 py-2.5 text-sm flex-none transition-colors ${selectedWilayah === kode ? 'bg-blue-50 text-blue-500 font-bold' : 'hover:bg-gray-50 text-gray-700'}`}>
                       {formatWilayah(kode)}
                     </button>
                   ))}
@@ -347,258 +283,6 @@ export default function PengqurbanActionButtons({ data }: { data: any }) {
           </button>
         </div>
       </div>
-
-      {/* 🟢 BAGIAN 4: DRAWER TAMBAH HEWAN QURBAN (FORM BARU LENGKAP) */}
-      {isAddHewanOpen && (
-        <>
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] animate-in fade-in" onClick={() => setIsAddHewanOpen(false)} />
-          
-          <div className="fixed top-0 right-0 h-full w-full max-w-2xl bg-white shadow-2xl z-[70] flex flex-col animate-in slide-in-from-right duration-300">
-            <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between bg-emerald-50/30">
-              <div>
-                <h3 className="text-xl font-bold text-emerald-800">Tambah Hewan</h3>
-                <p className="text-sm text-emerald-600/70 mt-1">NKW Pemilik: #{nkwLama}</p>
-              </div>
-              <button onClick={() => setIsAddHewanOpen(false)} className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"><X size={22} /></button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 space-y-6 bg-gray-50/30 relative">
-              
-              {/* ✨ OVERLAY KHUSUS BUAT NUTUP DROPDOWN HEWAN KALAU DIKLIK DI LUAR */}
-              {openDropdown && (
-                <div className="fixed inset-0 z-[75]" onClick={() => setOpenDropdown(null)} />
-              )}
-
-              {/* 🧩 KELOMPOK 1: INFORMASI DASAR */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5 relative">
-                <h4 className="font-bold text-emerald-800 border-b pb-2">Informasi Dasar</h4>
-                <div className="grid grid-cols-2 gap-5">
-                  
-                  {/* ✨ CUSTOM DROPDOWN: JENIS QURBAN */}
-                  <div className={`space-y-1.5 flex flex-col relative ${openDropdown === 'jenis_qurban' ? 'z-[80]' : ''}`}>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jenis Qurban</label>
-                    <div 
-                      onClick={() => setOpenDropdown(openDropdown === 'jenis_qurban' ? null : 'jenis_qurban')}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between cursor-pointer hover:border-emerald-500/50 transition-colors"
-                    >
-                      <span className="text-sm font-bold text-gray-700 uppercase">
-                        {hwn.jenis_qurban === "1" ? "KAMBING 🐐" : hwn.jenis_qurban === "2" ? "SAPI 🐄" : "SAPI PATUNGAN 🤝"}
-                      </span>
-                      <ChevronDown size={18} className={`text-gray-400 transition-transform ${openDropdown === 'jenis_qurban' ? 'rotate-180' : ''}`} />
-                    </div>
-                    {openDropdown === 'jenis_qurban' && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden py-1 animate-in fade-in slide-in-from-top-2">
-                        {[
-                          { val: "1", label: "KAMBING 🐐" },
-                          { val: "2", label: "SAPI 🐄" },
-                          { val: "3", label: "SAPI PATUNGAN 🤝" }
-                        ].map(opt => (
-                          <div 
-                            key={opt.val}
-                            onClick={() => { setHwn({...hwn, jenis_qurban: opt.val}); setOpenDropdown(null); }}
-                            className={`w-full text-left px-4 py-2.5 text-sm font-bold cursor-pointer transition-colors ${hwn.jenis_qurban === opt.val ? 'bg-emerald-50 text-emerald-600' : 'hover:bg-gray-50 text-gray-700'}`}
-                          >
-                            {opt.label}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* ✨ CUSTOM DROPDOWN: BENTUK TITIPAN */}
-                  <div className={`space-y-1.5 flex flex-col relative ${openDropdown === 'bentuk' ? 'z-[80]' : ''}`}>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bentuk Titipan</label>
-                    <div 
-                      onClick={() => setOpenDropdown(openDropdown === 'bentuk' ? null : 'bentuk')}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between cursor-pointer hover:border-emerald-500/50 transition-colors"
-                    >
-                      <span className="text-sm font-bold text-gray-700 uppercase">
-                        {hwn.bentuk === "UANG" ? "UANG 💵" : "HEWAN 🥩"}
-                      </span>
-                      <ChevronDown size={18} className={`text-gray-400 transition-transform ${openDropdown === 'bentuk' ? 'rotate-180' : ''}`} />
-                    </div>
-                    {openDropdown === 'bentuk' && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden py-1 animate-in fade-in slide-in-from-top-2">
-                        {[
-                          { val: "UANG", label: "UANG 💵" },
-                          { val: "HEWAN", label: "HEWAN 🥩" }
-                        ].map(opt => (
-                          <div 
-                            key={opt.val}
-                            onClick={() => { setHwn({...hwn, bentuk: opt.val}); setOpenDropdown(null); }}
-                            className={`w-full text-left px-4 py-2.5 text-sm font-bold cursor-pointer transition-colors ${hwn.bentuk === opt.val ? 'bg-emerald-50 text-emerald-600' : 'hover:bg-gray-50 text-gray-700'}`}
-                          >
-                            {opt.label}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5 flex flex-col relative">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nominal Uang</label>
-                    <input type="number" name="uang" value={hwn.uang} onChange={handleChangeHwn} placeholder="Contoh: 3500000" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
-                  </div>
-
-                  {hwn.jenis_qurban === "3" && (
-                    <div className="space-y-1.5 flex flex-col relative">
-                      <label className="text-xs font-bold text-emerald-600 uppercase tracking-wider flex items-center gap-1">Kelompok Sapi ✨</label>
-                      <input type="text" name="kel_sapi" value={hwn.kel_sapi} onChange={handleChangeHwn} placeholder="Cth: KELOMPOK 1" className="w-full px-4 py-3 bg-emerald-50 border border-emerald-200 rounded-xl text-sm uppercase placeholder:normal-case focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500" />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 🧩 KELOMPOK 2: PENYEMBELIHAN & DISTRIBUSI */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5 relative">
-                <h4 className="font-bold text-blue-800 border-b pb-2">Penyembelihan & Distribusi</h4>
-                <div className="grid grid-cols-2 gap-5">
-                  
-                  {/* ✨ CUSTOM DROPDOWN: HADIR MELIHAT? */}
-                  <div className={`space-y-1.5 flex flex-col relative ${openDropdown === 'melihat' ? 'z-[80]' : ''}`}>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hadir Melihat?</label>
-                    <div 
-                      onClick={() => setOpenDropdown(openDropdown === 'melihat' ? null : 'melihat')}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between cursor-pointer hover:border-blue-500/50 transition-colors"
-                    >
-                      <span className="text-sm font-bold text-gray-700 uppercase">
-                        {hwn.melihat === "YA" ? "YA 👀" : "TIDAK ❌"}
-                      </span>
-                      <ChevronDown size={18} className={`text-gray-400 transition-transform ${openDropdown === 'melihat' ? 'rotate-180' : ''}`} />
-                    </div>
-                    {openDropdown === 'melihat' && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden py-1 animate-in fade-in slide-in-from-top-2">
-                        {[
-                          { val: "YA", label: "YA 👀" },
-                          { val: "TIDAK", label: "TIDAK ❌" }
-                        ].map(opt => (
-                          <div 
-                            key={opt.val}
-                            onClick={() => { setHwn({...hwn, melihat: opt.val}); setOpenDropdown(null); }}
-                            className={`w-full text-left px-4 py-2.5 text-sm font-bold cursor-pointer transition-colors ${hwn.melihat === opt.val ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50 text-gray-700'}`}
-                          >
-                            {opt.label}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ✨ CUSTOM DROPDOWN: PENYALURAN */}
-                  <div className={`space-y-1.5 flex flex-col relative ${openDropdown === 'penyaluran' ? 'z-[80]' : ''}`}>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Penyaluran</label>
-                    <div 
-                      onClick={() => setOpenDropdown(openDropdown === 'penyaluran' ? null : 'penyaluran')}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between cursor-pointer hover:border-blue-500/50 transition-colors"
-                    >
-                      <span className="text-sm font-bold text-gray-700 uppercase">
-                        {hwn.penyaluran === "DALAM" ? "DALAM (INTERNAL) 🏢" : "LUAR (EKSTERNAL) 🌍"}
-                      </span>
-                      <ChevronDown size={18} className={`text-gray-400 transition-transform ${openDropdown === 'penyaluran' ? 'rotate-180' : ''}`} />
-                    </div>
-                    {openDropdown === 'penyaluran' && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden py-1 animate-in fade-in slide-in-from-top-2">
-                        {[
-                          { val: "DALAM", label: "DALAM (INTERNAL) 🏢" },
-                          { val: "LUAR", label: "LUAR (EKSTERNAL) 🌍" }
-                        ].map(opt => (
-                          <div 
-                            key={opt.val}
-                            onClick={() => { setHwn({...hwn, penyaluran: opt.val}); setOpenDropdown(null); }}
-                            className={`w-full text-left px-4 py-2.5 text-sm font-bold cursor-pointer transition-colors ${hwn.penyaluran === opt.val ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50 text-gray-700'}`}
-                          >
-                            {opt.label}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* ✨ CUSTOM DROPDOWN: MENYEMBELIH */}
-                  <div className={`space-y-1.5 flex flex-col relative ${openDropdown === 'menyembelih' ? 'z-[80]' : ''}`}>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ikut Menyembelih?</label>
-                    <div 
-                      onClick={() => setOpenDropdown(openDropdown === 'menyembelih' ? null : 'menyembelih')}
-                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between cursor-pointer hover:border-blue-500/50 transition-colors"
-                    >
-                      <span className="text-sm font-bold text-gray-700 uppercase">
-                        {hwn.menyembelih === "YA" ? "YA 🔪" : "TIDAK ❌"}
-                      </span>
-                      <ChevronDown size={18} className={`text-gray-400 transition-transform ${openDropdown === 'menyembelih' ? 'rotate-180' : ''}`} />
-                    </div>
-                    {openDropdown === 'menyembelih' && (
-                      <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-lg overflow-hidden py-1 animate-in fade-in slide-in-from-top-2">
-                        {[
-                          { val: "YA", label: "YA 🔪" },
-                          { val: "TIDAK", label: "TIDAK ❌" }
-                        ].map(opt => (
-                          <div 
-                            key={opt.val}
-                            onClick={() => { setHwn({...hwn, menyembelih: opt.val}); setOpenDropdown(null); }}
-                            className={`w-full text-left px-4 py-2.5 text-sm font-bold cursor-pointer transition-colors ${hwn.menyembelih === opt.val ? 'bg-blue-50 text-blue-600' : 'hover:bg-gray-50 text-gray-700'}`}
-                          >
-                            {opt.label}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="space-y-1.5 flex flex-col relative">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jml Bagian (Angka)</label>
-                    <input type="number" name="jml_bagian" value={hwn.jml_bagian} onChange={handleChangeHwn} placeholder="Cth: 5" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5 mt-2 flex flex-col relative">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pesan Bagian Khusus</label>
-                  <textarea name="pesan_bagian" rows={2} value={hwn.pesan_bagian} onChange={handleChangeHwn} placeholder="Cth: MINTA KEPALA SAPI DAN KAKI" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase placeholder:normal-case resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
-                </div>
-              </div>
-
-              {/* 🧩 KELOMPOK 3: INFORMASI LAINNYA */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5 relative">
-                <h4 className="font-bold text-orange-800 border-b pb-2">Informasi Lainnya</h4>
-                <div className="grid grid-cols-2 gap-5">
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">No UQ</label>
-                    <input type="text" name="no_uq" value={hwn.no_uq} onChange={handleChangeHwn} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500" />
-                  </div>
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lokasi</label>
-                    <input type="text" name="lokasi" value={hwn.lokasi} onChange={handleChangeHwn} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500" />
-                  </div>
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Penerima</label>
-                    <input type="text" name="penerima" value={hwn.penerima} onChange={handleChangeHwn} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500" />
-                  </div>
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sebab</label>
-                    <input type="text" name="sebab" value={hwn.sebab} onChange={handleChangeHwn} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500" />
-                  </div>
-                </div>
-                <div className="space-y-1.5 mt-2 flex flex-col">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Keterangan Tambahan</label>
-                  <textarea name="keterangan" rows={2} value={hwn.keterangan} onChange={handleChangeHwn} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500" />
-                </div>
-              </div>
-              
-            </div>
-
-            {/* Footer Laci */}
-            <div className="p-8 border-t border-gray-100 bg-gray-50/50 flex justify-end gap-3">
-              <button onClick={() => setIsAddHewanOpen(false)} className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors">Batal</button>
-              <button 
-                onClick={executeAddHewan} 
-                disabled={isSubmittingHewan} 
-                className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all text-white ${isSubmittingHewan ? "bg-emerald-400 cursor-not-allowed" : "bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-500/20"}`}
-              >
-                {isSubmittingHewan ? <><Loader2 size={18} className="animate-spin" /> Menyimpan...</> : <><Save size={18} /> Simpan Hewan</>}
-              </button>
-            </div>
-          </div>
-        </>
-      )}
     </>
   );
 }

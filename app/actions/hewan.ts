@@ -7,7 +7,7 @@ import { getActiveHijriYear } from "@/app/lib/hijri";
 const prisma = new PrismaClient();
 
 // ==========================================
-// 1. FUNGSI CREATE HEWAN QURBAN 🐄🐐
+// 1. FUNGSI CREATE HEWAN QURBAN 🐄🐐 (+ AUTO KWITANSI CERDAS)
 // ==========================================
 export async function createHewan(formData: any) {
   try {
@@ -29,7 +29,8 @@ export async function createHewan(formData: any) {
     const seqString = nextSeq.toString().padStart(4, '0'); 
     const generatedNoIdLama = `${hijriYear}${kodeHewan}${seqString}`;
 
-    await prisma.hewanQurban.create({
+    // 💾 1. SIMPAN DATA HEWAN KE DATABASE
+    const newHewan = await prisma.hewanQurban.create({
       data: {
         no_id_lama: generatedNoIdLama,
         nkw_pengqurban: formData.nkw_pengqurban,
@@ -51,18 +52,69 @@ export async function createHewan(formData: any) {
         petugas: formData.petugas || null,
         sebab: formData.sebab || null,
         no_id_surat: formData.no_id_surat || null,
+        
         biaya_operasional: formData.biaya_operasional ? parseFloat(formData.biaya_operasional) : null,
         pindah_sapi: formData.pindah_sapi === 'YA',
         penyaluran_luar: formData.penyaluran_luar === 'YA',
         metode_bayar: formData.metode_bayar || "TUNAI",
         status_bayar: formData.status_bayar || "BELUM LUNAS",
+        
+        nama_shohibul_sapi: formData.nama_shohibul_sapi || null,
+        bukti_bayar: formData.file_nama || null, 
       }
     });
 
+    // 🧾 2. LOGIKA AUTO-KWITANSI CERDAS
+    const uangQurban = formData.uang ? parseFloat(formData.uang) : 0;
+    const uangOperasional = formData.biaya_operasional ? parseFloat(formData.biaya_operasional) : 0;
+
+    // Kalau ada uang masuk (dari Qurban ATAU Operasional), kita cetak kwitansinya!
+    if (uangQurban > 0 || uangOperasional > 0) {
+        const detailItems = [];
+        
+        // Item 1: Catat Uang Qurbannya
+        if (uangQurban > 0) {
+            detailItems.push({
+                pos: "PEMASUKAN QURBAN",
+                uraian: `Titipan uang qurban untuk ID Hewan: ${generatedNoIdLama}`,
+                debit: uangQurban,
+                kredit: 0
+            });
+        }
+        
+        // Item 2: Catat Uang Operasionalnya (Kalau bawa hewan hidup)
+        if (uangOperasional > 0) {
+            detailItems.push({
+                pos: "OPERASIONAL QURBAN",
+                uraian: `Biaya operasional hewan hidup untuk ID Hewan: ${generatedNoIdLama}`,
+                debit: uangOperasional,
+                kredit: 0
+            });
+        }
+
+        try {
+            // Langsung inject ke tabel KuitansiTaktis!
+            await prisma.kuitansiTaktis.create({
+                data: {
+                    no_kw: `KW-${generatedNoIdLama}`, // Bikin No KW unik berdasarkan ID Hewan
+                    penanggung_jawab: formData.nkw_pengqurban, // Penanggung jawab diisi NKW Shohibul
+                    detail_kuitansi: {
+                        create: detailItems
+                    }
+                }
+            });
+            console.log(`[SYSTEM] Auto-Kwitansi berhasil digenerate: KW-${generatedNoIdLama}`);
+        } catch (kwErr) {
+            console.error("Gagal auto-generate kuitansi:", kwErr);
+            // Error kuitansi ditahan di sini biar data hewan tetep sukses kesimpen
+        }
+    }
+
     revalidatePath("/admin/pengqurban");
     revalidatePath("/admin/hewan");
+    revalidatePath("/admin/kuitansi"); // ✨ Refresh juga halaman kuitansinya!
 
-    return { success: true, message: `Hewan berhasil ditambah dengan ID: ${generatedNoIdLama}` };
+    return { success: true, message: `Berhasil! Hewan ID: ${generatedNoIdLama}` };
   } catch (error) {
     console.error("Gagal nyimpen hewan:", error);
     return { success: false, message: "Terjadi kesalahan saat menyimpan data hewan." };
@@ -70,14 +122,13 @@ export async function createHewan(formData: any) {
 }
 
 // ==========================================
-// 2. FUNGSI UPDATE HEWAN QURBAN 📝 (BARU!)
+// 2. FUNGSI UPDATE HEWAN QURBAN 📝
 // ==========================================
 export async function updateHewan(id_hewan: string, formData: any) {
   try {
     await prisma.hewanQurban.update({
       where: { id_hewan },
       data: {
-        // NKW dan Jenis Qurban nggak kita ubah di sini demi keamanan relasi data
         bentuk: formData.bentuk || null, 
         uang: formData.uang ? parseFloat(formData.uang) : null,
         penyembelihan: formData.penyembelihan || null,
@@ -95,11 +146,16 @@ export async function updateHewan(id_hewan: string, formData: any) {
         petugas: formData.petugas || null,
         sebab: formData.sebab || null,
         no_id_surat: formData.no_id_surat || null,
+        
         biaya_operasional: formData.biaya_operasional ? parseFloat(formData.biaya_operasional) : null,
         pindah_sapi: formData.pindah_sapi === 'YA',
         penyaluran_luar: formData.penyaluran_luar === 'YA',
         metode_bayar: formData.metode_bayar || "TUNAI",
         status_bayar: formData.status_bayar || "BELUM LUNAS",
+        
+        // ✨ SUPER FORM BARU ✨
+        nama_shohibul_sapi: formData.nama_shohibul_sapi || null,
+        bukti_bayar: formData.file_nama || null,
       }
     });
 
@@ -136,7 +192,6 @@ export async function deleteHewan(id_hewan: string) {
 // ==========================================
 export async function getHewanQurban(query: string = "", yearFilter: string = "") {
   try {
-    // 1. Tarik data mentah dari database (Logic Prisma tetep sama)
     const rawData = await prisma.hewanQurban.findMany({
       where: {
         AND: [
@@ -163,58 +218,44 @@ export async function getHewanQurban(query: string = "", yearFilter: string = ""
       orderBy: { no_id_lama: 'desc' }
     });
 
-    // 2. 🪄 PROSES AUTO-GROUPING
     const groupedData: any[] = [];
     const sapiPatunganMap = new Map<string, any>();
 
     for (const item of rawData) {
-      // Asumsi "3" adalah value untuk Sapi Patungan. 
-      // Kalau bapaknya masukin kel_sapi, kita proses grouping!
       if (item.jenis_qurban === "3" && item.kel_sapi) {
-        const groupKey = item.kel_sapi.toUpperCase(); // Biar seragam (A, B, C)
+        const groupKey = item.kel_sapi.toUpperCase(); 
         
         if (!sapiPatunganMap.has(groupKey)) {
-          // Kalau kelompok ini belum ada, kita bikin "Wadah" (Virtual Row) baru
           const newGroup = {
-            ...item, // Copy data dasar dari anggota pertama
-            id_hewan: `GROUP_${groupKey}`, // ID unik virtual buat ngerender key React
-            no_id_lama: `KELOMPOK ${groupKey}`, // Biar di tabel tampilannya KELOMPOK A
-            isGroup: true, // 🚩 TANDA PENTING: Flag buat ngasih tau frontend kalau ini grup!
-            members: [item], // Simpan data asli Bapak ke-1 di sini
+            ...item,
+            id_hewan: `GROUP_${groupKey}`,
+            no_id_lama: `KELOMPOK ${groupKey}`,
+            isGroup: true,
+            members: [item],
             pengqurban: {
               ...item.pengqurban,
-              nama_lengkap: `Sapi Patungan Kelompok ${groupKey}` // Nama sementara
+              nama_lengkap: `Sapi Patungan Kelompok ${groupKey}`
             }
           };
           sapiPatunganMap.set(groupKey, newGroup);
-          groupedData.push(newGroup); // Masukin wadah ini ke antrean utama
+          groupedData.push(newGroup);
         } else {
-          // Kalau wadahnya udah ada, masukin aja bapak ini ke daftar members
           const existingGroup = sapiPatunganMap.get(groupKey);
           existingGroup.members.push(item);
         }
       } else {
-        // Kalau Kambing, Sapi Utuh, atau ga ada kelompok, biarin jalan normal (Individu)
         groupedData.push(item);
       }
     }
 
-    // 3. 🎨 FINISHING: Update label jumlah orang di grup
     for (const group of sapiPatunganMap.values()) {
       group.pengqurban.nama_lengkap = `Sapi Patungan Kel. ${group.kel_sapi} (${group.members.length} Orang)`;
-      
-      // Ambil bentuk dari anggota pertama sbg default tabel
       group.bentuk = group.members[0].bentuk || "-";
       
-      // 👇 LOGIC PENYALURAN DINAMIS 👇
-      // Kita kumpulin semua data penyaluran dari tiap anggota, terus kita saring biar nggak ada yang dobel (pakai Set)
       const semuaPenyaluran = Array.from(new Set(group.members.map((m: any) => m.penyaluran || "INTERNAL MMI")));
-      
       if (semuaPenyaluran.length === 1) {
-        // Kalau isinya cuma 1 macem (berarti 7 orang sepakat semua)
         group.penyaluran = semuaPenyaluran[0]; 
       } else {
-        // Kalau isinya lebih dari 1 (berarti ada yang beda-beda)
         group.penyaluran = "Campuran (Internal & Luar)";
       }
     }
@@ -223,5 +264,47 @@ export async function getHewanQurban(query: string = "", yearFilter: string = ""
   } catch (error) {
     console.error("Gagal narik data hewan:", error);
     return { success: false, data: [] };
+  }
+}
+
+// ==========================================
+// 5. FUNGSI CEK STATISTIK KELOMPOK SAPI PATUNGAN 📊
+// ==========================================
+export async function getStatistikSapiPatungan() {
+  try {
+    const hijriYear = getActiveHijriYear();
+    
+    // Cari semua hewan patungan di tahun ini
+    const patunganList = await prisma.hewanQurban.findMany({
+      where: {
+        jenis_qurban: "3",
+        no_id_lama: { startsWith: hijriYear }
+      },
+      select: { kel_sapi: true }
+    });
+
+    // Hitung ada berapa anggota di masing-masing kelompok
+    const stats: Record<string, number> = {};
+    patunganList.forEach(item => {
+      if (item.kel_sapi) {
+        const key = item.kel_sapi.toUpperCase();
+        stats[key] = (stats[key] || 0) + 1;
+      }
+    });
+
+    // Robot AI nyariin kelompok mana yang belum genap 7 orang
+    let suggestedGroup = "1";
+    for (let i = 1; i <= 100; i++) {
+      const key = i.toString();
+      if ((stats[key] || 0) < 7) {
+        suggestedGroup = key;
+        break;
+      }
+    }
+
+    return { success: true, data: stats, suggested: suggestedGroup };
+  } catch (error) {
+    console.error("Gagal ambil statistik sapi:", error);
+    return { success: false, data: {}, suggested: "1" };
   }
 }

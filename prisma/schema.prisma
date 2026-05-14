@@ -46,12 +46,14 @@ model HewanQurban {
   jenis_qurban      String 
   bentuk            String? 
   uang              Decimal? @db.Decimal(10, 2)
+  nama_shohibul_sapi String? @db.Text
   
   biaya_operasional Decimal? @db.Decimal(10, 2)
   pindah_sapi       Boolean  @default(false)
   penyaluran_luar   Boolean  @default(false) // "Keluar ITS"
   metode_bayar      String?  // TUNAI / TRANSFER
   status_bayar      String   @default("BELUM LUNAS") // LUNAS / DP / BELUM LUNAS
+  bukti_bayar       String?
 
   penyembelihan     String?
   melihat           Boolean  @default(false)

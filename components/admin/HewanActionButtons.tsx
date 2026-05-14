@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, Edit, AlertTriangle, Loader2, X, Save, Eye, MapPin, Hash, User, ChevronDown, Printer, CheckCircle2 } from "lucide-react";
+import { Trash2, Edit, AlertTriangle, Loader2, X, Save, Eye, Printer, CheckCircle2, User, ChevronDown, Info } from "lucide-react";
 import { deleteHewan, updateHewan } from "@/app/actions/hewan";
 import toast from "react-hot-toast";
 
@@ -10,31 +10,46 @@ export default function HewanActionButtons({ data }: { data: any }) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // 🎯 STATE BARU: Buat nyimpen data orang spesifik yang mau diedit/dihapus
   const [selectedMember, setSelectedMember] = useState<any>(null);
 
+  // 🎯 State Print PDF
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoadingPdf, setIsLoadingPdf] = useState(false);
-  
-  // State Form Lengkap (Nilainya dikosongin dulu, nanti diisi pas tombol Edit diklik)
+
+  // 🎯 State 7 Nama Sapi Utuh (Khusus Edit)
+  const [namaSapiUtuh, setNamaSapiUtuh] = useState<string[]>([]);
+
+  // State Form Edit
   const [hwn, setHwn] = useState({
     bentuk: "UANG", uang: "", penyembelihan: "", melihat: "TIDAK", menyembelih: "TIDAK",
     jml_bagian: "", pembagian: "", pesan_bagian: "", kel_sapi: "", no_uq: "",
     penyaluran: "DALAM", lokasi: "", keterangan: "", penerima: "", petugas: "", sebab: "",
-    biaya_operasional: data.biaya_operasional?.toString() || "",
-    pindah_sapi: data.pindah_sapi ? "YA" : "TIDAK",
-    penyaluran_luar: data.penyaluran_luar ? "YA" : "TIDAK",
-    metode_bayar: data.metode_bayar || "TUNAI",
-    status_bayar: data.status_bayar || "BELUM LUNAS",
+    biaya_operasional: "", pindah_sapi: "TIDAK", metode_bayar: "TUNAI", status_bayar: "BELUM LUNAS"
   });
 
   const handleChange = (e: any) => setHwn({ ...hwn, [e.target.name]: e.target.value.toUpperCase() });
 
-  // 🪄 FUNGSI BUKA MODAL EDIT (Isi form sesuai orang yang diklik)
+  const handleNamaSapiChange = (index: number, value: string) => {
+    const newNames = [...namaSapiUtuh];
+    newNames[index] = value;
+    setNamaSapiUtuh(newNames);
+  };
+
+  // 🪄 BUKA MODAL EDIT 
   const handleActionOpenEdit = (item: any) => {
     setSelectedMember(item);
+    
+    // Parse JSON 7 Nama kalau ada
+    let parsedNames = ["", "", "", "", "", "", ""];
+    if (item.nama_shohibul_sapi) {
+      try {
+        const dbNames = JSON.parse(item.nama_shohibul_sapi);
+        dbNames.forEach((n: string, i: number) => { if (i < 7) parsedNames[i] = n; });
+      } catch (e) {}
+    }
+    setNamaSapiUtuh(parsedNames);
+
     setHwn({
       bentuk: item.bentuk || "UANG",
       uang: item.uang?.toString() || "",
@@ -54,14 +69,13 @@ export default function HewanActionButtons({ data }: { data: any }) {
       sebab: item.sebab || "",
       biaya_operasional: item.biaya_operasional?.toString() || "",
       pindah_sapi: item.pindah_sapi ? "YA" : "TIDAK",
-      penyaluran_luar: item.penyaluran_luar ? "YA" : "TIDAK",
       metode_bayar: item.metode_bayar || "TUNAI",
-      status_bayar: item.status_bayar || "BELUM LUNAS",
+      status_bayar: item.status_bayar || "BELUM LUNAS"
     });
     setIsEditOpen(true);
   };
 
-  // 🪄 FUNGSI BUKA MODAL DELETE
+  // 🪄 BUKA MODAL DELETE
   const handleActionOpenDelete = (item: any) => {
     setSelectedMember(item);
     setIsDeleteOpen(true);
@@ -71,7 +85,13 @@ export default function HewanActionButtons({ data }: { data: any }) {
     if (!selectedMember) return;
     setIsSubmitting(true);
     const toastId = toast.loading("Memperbarui data hewan...");
-    const res = await updateHewan(selectedMember.id_hewan, hwn); // Pakai ID spesifik!
+    
+    const payload = {
+      ...hwn,
+      nama_shohibul_sapi: selectedMember.jenis_qurban === "2" ? JSON.stringify(namaSapiUtuh.filter(n => n !== "")) : null
+    };
+
+    const res = await updateHewan(selectedMember.id_hewan, payload);
     if (res.success) {
       toast.success(res.message, { id: toastId });
       setIsEditOpen(false);
@@ -85,7 +105,7 @@ export default function HewanActionButtons({ data }: { data: any }) {
     if (!selectedMember) return;
     setIsSubmitting(true);
     const toastId = toast.loading("Menghapus hewan...");
-    const res = await deleteHewan(selectedMember.id_hewan); // Pakai ID spesifik!
+    const res = await deleteHewan(selectedMember.id_hewan);
     if (res.success) {
       toast.success(res.message, { id: toastId });
       setIsDeleteOpen(false);
@@ -95,6 +115,7 @@ export default function HewanActionButtons({ data }: { data: any }) {
     setIsSubmitting(false);
   };
 
+  // 🪄 FUNGSI PRINT PREVIEW PDF
   const handleOpenPreview = async () => {
     setIsPreviewOpen(true);
     setIsLoadingPdf(true);
@@ -134,24 +155,23 @@ export default function HewanActionButtons({ data }: { data: any }) {
     if (pdfUrl) { URL.revokeObjectURL(pdfUrl); setPdfUrl(null); }
   };
 
-  // 👥 Siapin list data shohibul (Kalau individu = array isi 1, kalau grup = array isi 7)
   const membersList = data.isGroup ? data.members : [data];
 
   return (
     <>
-      {/* TOMBOL UTAMA DI TABEL */}
+      {/* 🚀 TOMBOL UTAMA DI TABEL (UDAH KEMBALI LENGKAP!) */}
       <div className="flex items-center justify-center gap-2">
         <button onClick={() => setIsDetailOpen(true)} className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Lihat Detail Rinci">
           <Eye size={16} />
         </button>
         
-        {/* Tombol Edit/Delete di tabel utama CUMA MUNCUL kalau dia BUKAN Sapi Patungan */}
         {!data.isGroup && (
           <button onClick={() => handleActionOpenEdit(data)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors" title="Edit Data Lengkap">
             <Edit size={16} />
           </button>
         )}
 
+        {/* INI DIA YANG KANGEN SAMA TOMBOL PRINT WKWKWK */}
         <button onClick={handleOpenPreview} className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors" title="Preview Nametag (PDF)">
           <Printer size={16} />
         </button>
@@ -163,7 +183,7 @@ export default function HewanActionButtons({ data }: { data: any }) {
         )}
       </div>
 
-      {/* 📄 MODAL PREVIEW PDF (Tetap sama) */}
+      {/* 📄 MODAL PREVIEW PDF (Dikembalikan!) */}
       {isPreviewOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClosePreview} />
@@ -197,7 +217,7 @@ export default function HewanActionButtons({ data }: { data: any }) {
         </div>
       )}
 
-      {/* 🟢 MODAL KONFIRMASI DELETE YANG DINAMIS */}
+      {/* 🟢 MODAL KONFIRMASI DELETE YANG DINAMIS (Dikembalikan!) */}
       {isDeleteOpen && selectedMember && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !isSubmitting && setIsDeleteOpen(false)} />
@@ -217,247 +237,123 @@ export default function HewanActionButtons({ data }: { data: any }) {
         </div>
       )}
 
-      {/* 🔵 DRAWER LIHAT DETAIL (SUPER UPGRADE!) */}
+      {/* 🔵 DRAWER LIHAT DETAIL (VIEW) */}
       {isDetailOpen && (
         <>
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60] animate-in fade-in" onClick={() => setIsDetailOpen(false)} />
-          <div className="fixed top-0 right-0 h-full w-full max-w-lg bg-gray-50 shadow-2xl z-[70] flex flex-col animate-in slide-in-from-right duration-300">
-            
-            {/* Header Laci Detail */}
-            <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center bg-white">
-              <div>
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Eye size={20} className="text-emerald-600"/> Informasi Rinci Qurban</h3>
-              </div>
+          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]" onClick={() => setIsDetailOpen(false)} />
+          <div className="fixed top-0 right-0 h-full w-full max-w-lg bg-gray-50 shadow-2xl z-[70] flex flex-col overflow-y-auto">
+            <div className="px-6 py-5 border-b border-gray-200 flex justify-between items-center bg-white sticky top-0 z-10">
+              <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2"><Eye size={20} className="text-emerald-600"/> Informasi Rinci</h3>
               <button onClick={() => setIsDetailOpen(false)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full bg-gray-100"><X size={20} /></button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-6">
-              {/* BLOK 1: INFORMASI FISIK HEWAN */}
-              <div className="bg-emerald-600 rounded-2xl p-5 text-white shadow-lg shadow-emerald-600/20 mb-6 relative overflow-hidden">
-                <div className="absolute -right-4 -top-4 opacity-10"><CheckCircle2 size={120} /></div>
-                <h4 className="font-bold text-emerald-100 text-sm uppercase tracking-widest mb-4">Profil Hewan Qurban</h4>
-                <div className="grid grid-cols-2 gap-y-4 gap-x-2 relative z-10">
-                  <div><p className="text-emerald-200 text-xs">ID Fisik / Kelompok</p><p className="font-bold text-lg">{data.no_id_lama}</p></div>
-                  <div><p className="text-emerald-200 text-xs">Jenis Hewan</p><p className="font-bold text-lg">{data.jenis_qurban === "1" ? "Kambing 🐐" : "Sapi 🐄"}</p></div>
-                  <div><p className="text-emerald-200 text-xs">Penyaluran</p><p className="font-bold text-md">{data.penyaluran || "Banyak Tujuan"}</p></div>
-                  <div><p className="text-emerald-200 text-xs">Total Shohibul</p><p className="font-bold text-md">{membersList.length} Orang</p></div>
+            <div className="p-6 space-y-6">
+              {/* Blok Identitas Utama */}
+              <div className="bg-emerald-600 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden">
+                <h4 className="font-bold text-emerald-100 text-sm uppercase tracking-widest mb-4">Profil Hewan</h4>
+                <div className="grid grid-cols-2 gap-y-4 relative z-10">
+                  <div><p className="text-emerald-200 text-xs">ID Hewan / Kelompok</p><p className="font-bold text-lg">{data.no_id_lama}</p></div>
+                  <div><p className="text-emerald-200 text-xs">Jenis</p><p className="font-bold text-lg">{data.jenis_qurban === "1" ? "Kambing 🐐" : "Sapi 🐄"}</p></div>
+                  <div><p className="text-emerald-200 text-xs">Penyaluran</p><p className="font-bold text-md">{data.penyaluran || "INTERNAL"}</p></div>
                 </div>
               </div>
 
-              <h4 className="font-bold text-gray-800 text-lg mb-3 flex items-center gap-2">
-                <User size={18} className="text-emerald-600" /> Daftar Shohibul Qurban
-              </h4>
-
-              {/* BLOK 2: LOOPING KARTU SHOHIBUL BESERTA TOMBOLNYA */}
-              <div className="space-y-4">
-                {membersList.map((m: any, idx: number) => (
-                  <div key={m.id_hewan} className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm hover:border-emerald-200 transition-colors">
-                    
-                    {/* Header Kartu Shohibul + Tombol Aksi */}
-                    <div className="flex justify-between items-start border-b border-gray-100 pb-3 mb-4">
-                      <div className="pr-2">
-                        <h5 className="font-bold text-gray-800 leading-tight">
-                          <span className="text-emerald-600 mr-1">{idx + 1}.</span> {m.pengqurban?.nama_lengkap || "Tanpa Nama"}
-                        </h5>
-                        <p className="text-xs font-mono text-gray-400 mt-1">NKW: {m.nkw_pengqurban}</p>
-                      </div>
-                      <div className="flex gap-2 shrink-0">
-                        <button onClick={() => handleActionOpenEdit(m)} className="p-1.5 text-blue-600 bg-blue-50 rounded hover:bg-blue-100 transition-colors" title="Edit Data Ini">
-                          <Edit size={14} />
-                        </button>
-                        <button onClick={() => handleActionOpenDelete(m)} className="p-1.5 text-red-600 bg-red-50 rounded hover:bg-red-100 transition-colors" title="Hapus Data Ini">
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+              {/* Loop Shohibul */}
+              {membersList.map((m: any, idx: number) => (
+                <div key={m.id_hewan} className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
+                  <h5 className="font-bold text-gray-800 border-b pb-2 mb-3"><span className="text-emerald-600 mr-1">{idx + 1}.</span> {m.pengqurban?.nama_lengkap || "Tanpa Nama"}</h5>
+                  
+                  <div className="grid grid-cols-2 gap-y-4 gap-x-3 mb-4">
+                    <div><p className="text-[10px] text-gray-400 font-bold uppercase">Bentuk</p><p className="font-bold text-sm text-gray-700">{m.bentuk || "-"}</p></div>
+                    <div><p className="text-[10px] text-gray-400 font-bold uppercase">Titipan Uang</p><p className="font-bold text-sm text-gray-700">{m.uang ? `Rp ${m.uang.toLocaleString('id-ID')}` : "-"}</p></div>
+                    <div><p className="text-[10px] text-gray-400 font-bold uppercase">Metode Bayar</p><p className="font-bold text-sm text-gray-700">{m.metode_bayar}</p></div>
+                    <div>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase">Status Bayar</p>
+                      <p className={`font-bold text-sm ${m.status_bayar === 'LUNAS' ? 'text-emerald-600' : 'text-red-500'}`}>{m.status_bayar}</p>
                     </div>
-
-                    {/* Isi Rincian Qurban Per Orang */}
-                    <div className="grid grid-cols-2 gap-y-4 gap-x-3">
-                      <div><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Nominal Titipan</p><p className="font-bold text-sm text-gray-700">{m.uang ? `Rp ${m.uang.toLocaleString('id-ID')}` : "-"}</p></div>
-                      <div><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Bentuk Titipan</p><p className="font-bold text-sm text-gray-700">{m.bentuk || "-"}</p></div>
-                      <div><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Hadir Melihat</p><p className="font-bold text-sm text-gray-700">{m.melihat ? "YA 👀" : "TIDAK"}</p></div>
-                      <div><p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Ikut Menyembelih</p><p className="font-bold text-sm text-gray-700">{m.menyembelih ? "YA 🔪" : "TIDAK"}</p></div>
-                      <div className="col-span-2">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wide">Alamat</p>
-                        <p className="font-medium text-xs text-gray-600 leading-snug mt-0.5">{m.pengqurban?.alamat || "-"}</p>
-                      </div>
-                    </div>
-
-                    {/* Pesan Bagian (Hanya muncul kalau ada) */}
-                    {m.pesan_bagian && (
-                      <div className="mt-4 bg-orange-50/50 border border-orange-100 p-3 rounded-xl">
-                        <p className="text-[10px] text-orange-600 font-bold uppercase tracking-wide mb-1 flex items-center gap-1">
-                          <AlertTriangle size={12} /> Pesan Bagian Khusus
-                        </p>
-                        <p className="text-sm font-medium text-gray-800 leading-snug">{m.pesan_bagian}</p>
-                      </div>
-                    )}
                   </div>
-                ))}
-              </div>
 
+                  {/* Tampil 7 Nama kalau Sapi Utuh */}
+                  {m.jenis_qurban === "2" && m.nama_shohibul_sapi && (
+                    <div className="mt-3 bg-purple-50 p-3 rounded-xl border border-purple-100">
+                      <p className="text-[10px] text-purple-600 font-bold uppercase mb-2">Daftar Nama yang Dibacakan (Sapi Utuh):</p>
+                      <ul className="text-sm font-medium text-gray-700 space-y-1">
+                        {JSON.parse(m.nama_shohibul_sapi).map((nama: string, i: number) => (
+                          <li key={i} className="flex gap-2"><span className="text-purple-400">{i+1}.</span> {nama}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Keterangan Tambahan */}
+                  {(m.pesan_bagian || m.pindah_sapi) && (
+                    <div className="mt-4 bg-orange-50/50 border border-orange-100 p-3 rounded-xl space-y-2">
+                      {m.pesan_bagian && (
+                        <div><p className="text-[10px] text-orange-600 font-bold uppercase">Pesan Bagian:</p><p className="text-sm font-medium text-gray-800">{m.pesan_bagian}</p></div>
+                      )}
+                      {m.pindah_sapi && (
+                        <div><p className="text-[10px] text-orange-600 font-bold uppercase">Opsi Cadangan:</p><p className="text-sm font-medium text-gray-800">✅ Bersedia dipindah ke Sapi Patungan</p></div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         </>
       )}
 
-      {/* 🟠 DRAWER EDIT FULL (Tetap mantap kayak kemarin!) */}
+      {/* 🟠 DRAWER EDIT (UPDATE DATA) */}
       {isEditOpen && selectedMember && (
         <>
-          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] animate-in fade-in" onClick={() => setIsEditOpen(false)} />
-          <div className="fixed top-0 right-0 h-full w-full max-w-2xl bg-gray-50 shadow-2xl z-[110] flex flex-col animate-in slide-in-from-right duration-300">
-            
-            {/* Header Laci Edit */}
-            <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between bg-white">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100]" onClick={() => setIsEditOpen(false)} />
+          <div className="fixed top-0 right-0 h-full w-full max-w-2xl bg-gray-50 shadow-2xl z-[110] flex flex-col overflow-y-auto">
+            <div className="px-8 py-6 border-b border-gray-200 flex items-center justify-between bg-white sticky top-0 z-10">
               <div>
                 <h3 className="text-xl font-bold text-blue-800 flex items-center gap-2"><Edit size={20}/> Edit Data Qurban</h3>
-                <p className="text-sm text-gray-500 font-medium mt-1">
-                  Milik: <span className="font-bold text-gray-800">{selectedMember.pengqurban?.nama_lengkap}</span>
-                </p>
+                <p className="text-sm text-gray-500 font-medium">Milik: <span className="font-bold text-gray-800">{selectedMember.pengqurban?.nama_lengkap}</span></p>
               </div>
-              <button onClick={() => setIsEditOpen(false)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors bg-gray-100"><X size={22} /></button>
+              <button onClick={() => setIsEditOpen(false)} className="p-2 bg-gray-100 rounded-full"><X size={22} /></button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-8 space-y-6">
-              
-              {/* KELOMPOK 1: INFORMASI DASAR */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5">
-                <h4 className="font-bold text-emerald-800 border-b border-gray-100 pb-3">Informasi Dasar</h4>
-                <div className="grid grid-cols-2 gap-5">
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bentuk Titipan</label>
-                    <div className="relative">
-                      <select name="bentuk" value={hwn.bentuk} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold uppercase appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                        <option value="UANG">UANG 💵</option><option value="HEWAN">HEWAN 🥩</option>
-                      </select>
-                      <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nominal Uang</label>
-                    <input type="number" name="uang" value={hwn.uang} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
-                  </div>
-                  <div className="space-y-1.5 flex flex-col col-span-2">
-                    <label className="text-xs font-bold text-emerald-600 uppercase tracking-wider">Kelompok Sapi (Opsional)</label>
-                    <input type="text" name="kel_sapi" value={hwn.kel_sapi} onChange={handleChange} placeholder="Contoh: A, 1, JURAGAN" className="w-full px-4 py-3 bg-emerald-50/50 border border-emerald-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500" />
-                  </div>
-                </div>
-              </div>
-
-              {/* KELOMPOK 2: PENYEMBELIHAN & DISTRIBUSI */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5">
-                <h4 className="font-bold text-blue-800 border-b border-gray-100 pb-3">Penyembelihan & Distribusi</h4>
-                <div className="grid grid-cols-2 gap-5">
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Hadir Melihat?</label>
-                    <div className="relative">
-                      <select name="melihat" value={hwn.melihat} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold uppercase appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                        <option value="YA">YA 👀</option><option value="TIDAK">TIDAK</option>
-                      </select>
-                      <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Penyaluran</label>
-                    <div className="relative">
-                      <select name="penyaluran" value={hwn.penyaluran} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold uppercase appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                        <option value="DALAM">DALAM (INTERNAL)</option><option value="LUAR">LUAR (EKSTERNAL)</option>
-                      </select>
-                      <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Ikut Menyembelih?</label>
-                    <div className="relative">
-                      <select name="menyembelih" value={hwn.menyembelih} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold uppercase appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500">
-                        <option value="YA">YA 🔪</option><option value="TIDAK">TIDAK</option>
-                      </select>
-                      <ChevronDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jml Bagian</label>
-                    <input type="number" name="jml_bagian" value={hwn.jml_bagian} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
-                  </div>
-                </div>
-                <div className="space-y-1.5 mt-2 flex flex-col">
-                  <label className="text-xs font-bold text-orange-600 uppercase tracking-wider">Pesan Bagian Khusus</label>
-                  <textarea name="pesan_bagian" rows={2} value={hwn.pesan_bagian} onChange={handleChange} placeholder="Contoh: Kepala utuh, kulit minta 1/2" className="w-full px-4 py-3 bg-orange-50/30 border border-orange-200 rounded-xl text-sm uppercase resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/30 focus:border-orange-500" />
-                </div>
-              </div>
-
-              {/* KELOMPOK 3: INFORMASI LAINNYA */}
-              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-5">
-                <h4 className="font-bold text-gray-800 border-b border-gray-100 pb-3">Informasi Lainnya</h4>
-                <div className="grid grid-cols-2 gap-5">
-                  <div className="space-y-1.5 flex flex-col"><label className="text-xs font-bold text-gray-500 uppercase tracking-wider">No UQ</label><input type="text" name="no_uq" value={hwn.no_uq} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" /></div>
-                  <div className="space-y-1.5 flex flex-col"><label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Lokasi</label><input type="text" name="lokasi" value={hwn.lokasi} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" /></div>
-                  <div className="space-y-1.5 flex flex-col"><label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Penerima</label><input type="text" name="penerima" value={hwn.penerima} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" /></div>
-                  <div className="space-y-1.5 flex flex-col"><label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Sebab</label><input type="text" name="sebab" value={hwn.sebab} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" /></div>
-                </div>
-                <div className="space-y-1.5 mt-2 flex flex-col">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Keterangan Tambahan</label>
-                  <textarea name="keterangan" rows={2} value={hwn.keterangan} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm uppercase resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500" />
-                </div>
-              </div>
-              
-            </div>
-
-            {/* 🧩 KELOMPOK BARU: ADMINISTRASI & PEMBAYARAN */}
-            <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 shadow-sm space-y-5">
-              <h4 className="font-bold text-blue-800 border-b border-blue-100 pb-3 italic">Status & Administrasi (Form Hijau)</h4>
-              <div className="grid grid-cols-2 gap-5">
+            <div className="p-8 space-y-6">
+              {/* Form Status Bayar & Metode */}
+              <div className="bg-white p-6 rounded-2xl border shadow-sm grid grid-cols-2 gap-5">
                 <div className="space-y-1.5 flex flex-col">
                   <label className="text-xs font-bold text-gray-500 uppercase">Metode Bayar</label>
-                  <select name="metode_bayar" value={hwn.metode_bayar} onChange={handleChange} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold">
-                    <option value="TUNAI">TUNAI 💵</option>
-                    <option value="TRANSFER">TRANSFER 💳</option>
+                  <select name="metode_bayar" value={hwn.metode_bayar} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm font-bold">
+                    <option value="TUNAI">TUNAI</option><option value="TRANSFER">TRANSFER</option>
                   </select>
                 </div>
                 <div className="space-y-1.5 flex flex-col">
                   <label className="text-xs font-bold text-gray-500 uppercase">Status Bayar</label>
-                  <select name="status_bayar" value={hwn.status_bayar} onChange={handleChange} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold">
-                    <option value="LUNAS">LUNAS ✅</option>
-                    <option value="DP">DP 💰</option>
-                    <option value="BELUM LUNAS">BELUM LUNAS ❌</option>
-                  </select>
-                </div>
-
-                {/* OPSI DINAMIS: Cuma muncul kalau Jenisnya Kambing */}
-                {(data.jenis_qurban === "1") && (
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-orange-600 uppercase">Pindah ke Sapi?</label>
-                    <select name="pindah_sapi" value={hwn.pindah_sapi} onChange={handleChange} className="w-full px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl text-sm font-bold text-orange-700">
-                      <option value="TIDAK">TIDAK</option>
-                      <option value="YA">YA (BERSEDIA)</option>
-                    </select>
-                  </div>
-                )}
-
-                {/* OPSI DINAMIS: Biaya Operasional cuma muncul kalau Bentuknya HEWAN */}
-                {hwn.bentuk === "HEWAN" && (
-                  <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-red-600 uppercase tracking-wider underline">Biaya Operasional (Hewan Hidup)</label>
-                    <input type="number" name="biaya_operasional" value={hwn.biaya_operasional} onChange={handleChange} placeholder="Contoh: 100000" className="w-full px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm font-bold text-red-700 focus:ring-red-500" />
-                  </div>
-                )}
-                
-                <div className="space-y-1.5 flex flex-col">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Keluar ITS?</label>
-                  <select name="penyaluran_luar" value={hwn.penyaluran_luar} onChange={handleChange} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold uppercase">
-                    <option value="TIDAK">TIDAK (INTERNAL)</option>
-                    <option value="YA">YA (LUAR ITS)</option>
+                  <select name="status_bayar" value={hwn.status_bayar} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm font-bold">
+                    <option value="LUNAS">LUNAS</option><option value="DP">DP</option><option value="BELUM LUNAS">BELUM LUNAS</option>
                   </select>
                 </div>
               </div>
-            </div>
 
-            {/* Footer Laci Edit */}
-            <div className="p-6 border-t border-gray-200 bg-white flex justify-end gap-3 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)] relative z-10">
-              <button onClick={() => setIsEditOpen(false)} className="px-6 py-3 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition-colors">Batal</button>
-              <button onClick={executeUpdate} disabled={isSubmitting} className={`px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all text-white ${isSubmitting ? "bg-blue-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30"}`}>
-                {isSubmitting ? <><Loader2 size={18} className="animate-spin" /> Menyimpan...</> : <><Save size={18} /> Update Data</>}
-              </button>
+              {/* Form 7 Nama (Sapi Utuh Khusus) */}
+              {selectedMember.jenis_qurban === "2" && (
+                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 shadow-sm space-y-4">
+                  <h4 className="font-bold text-purple-800 flex items-center gap-2"><Info size={16}/> Edit 7 Nama Sapi Utuh</h4>
+                  <div className="grid grid-cols-2 gap-3">
+                    {namaSapiUtuh.map((nama, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="w-6 h-6 rounded-full bg-purple-200 text-purple-700 text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
+                        <input type="text" value={nama} onChange={(e) => handleNamaSapiChange(idx, e.target.value)} placeholder={`Nama ke-${idx + 1}`} className="w-full px-3 py-2 bg-white border border-purple-100 rounded-lg text-sm" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tombol Update */}
+              <div className="flex justify-end pt-4">
+                <button onClick={executeUpdate} disabled={isSubmitting} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold">
+                  {isSubmitting ? "Menyimpan..." : "Update Data"}
+                </button>
+              </div>
             </div>
           </div>
         </>

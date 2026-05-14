@@ -23,6 +23,11 @@ export default function HewanActionButtons({ data }: { data: any }) {
     bentuk: "UANG", uang: "", penyembelihan: "", melihat: "TIDAK", menyembelih: "TIDAK",
     jml_bagian: "", pembagian: "", pesan_bagian: "", kel_sapi: "", no_uq: "",
     penyaluran: "DALAM", lokasi: "", keterangan: "", penerima: "", petugas: "", sebab: "",
+    biaya_operasional: data.biaya_operasional?.toString() || "",
+    pindah_sapi: data.pindah_sapi ? "YA" : "TIDAK",
+    penyaluran_luar: data.penyaluran_luar ? "YA" : "TIDAK",
+    metode_bayar: data.metode_bayar || "TUNAI",
+    status_bayar: data.status_bayar || "BELUM LUNAS",
   });
 
   const handleChange = (e: any) => setHwn({ ...hwn, [e.target.name]: e.target.value.toUpperCase() });
@@ -47,6 +52,11 @@ export default function HewanActionButtons({ data }: { data: any }) {
       penerima: item.penerima || "",
       petugas: item.petugas || "",
       sebab: item.sebab || "",
+      biaya_operasional: item.biaya_operasional?.toString() || "",
+      pindah_sapi: item.pindah_sapi ? "YA" : "TIDAK",
+      penyaluran_luar: item.penyaluran_luar ? "YA" : "TIDAK",
+      metode_bayar: item.metode_bayar || "TUNAI",
+      status_bayar: item.status_bayar || "BELUM LUNAS",
     });
     setIsEditOpen(true);
   };
@@ -391,6 +401,55 @@ export default function HewanActionButtons({ data }: { data: any }) {
                 </div>
               </div>
               
+            </div>
+
+            {/* 🧩 KELOMPOK BARU: ADMINISTRASI & PEMBAYARAN */}
+            <div className="bg-blue-50/50 p-6 rounded-2xl border border-blue-100 shadow-sm space-y-5">
+              <h4 className="font-bold text-blue-800 border-b border-blue-100 pb-3 italic">Status & Administrasi (Form Hijau)</h4>
+              <div className="grid grid-cols-2 gap-5">
+                <div className="space-y-1.5 flex flex-col">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Metode Bayar</label>
+                  <select name="metode_bayar" value={hwn.metode_bayar} onChange={handleChange} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold">
+                    <option value="TUNAI">TUNAI 💵</option>
+                    <option value="TRANSFER">TRANSFER 💳</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5 flex flex-col">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Status Bayar</label>
+                  <select name="status_bayar" value={hwn.status_bayar} onChange={handleChange} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold">
+                    <option value="LUNAS">LUNAS ✅</option>
+                    <option value="DP">DP 💰</option>
+                    <option value="BELUM LUNAS">BELUM LUNAS ❌</option>
+                  </select>
+                </div>
+
+                {/* OPSI DINAMIS: Cuma muncul kalau Jenisnya Kambing */}
+                {(data.jenis_qurban === "1") && (
+                  <div className="space-y-1.5 flex flex-col">
+                    <label className="text-xs font-bold text-orange-600 uppercase">Pindah ke Sapi?</label>
+                    <select name="pindah_sapi" value={hwn.pindah_sapi} onChange={handleChange} className="w-full px-4 py-3 bg-orange-50 border border-orange-200 rounded-xl text-sm font-bold text-orange-700">
+                      <option value="TIDAK">TIDAK</option>
+                      <option value="YA">YA (BERSEDIA)</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* OPSI DINAMIS: Biaya Operasional cuma muncul kalau Bentuknya HEWAN */}
+                {hwn.bentuk === "HEWAN" && (
+                  <div className="space-y-1.5 flex flex-col">
+                    <label className="text-xs font-bold text-red-600 uppercase tracking-wider underline">Biaya Operasional (Hewan Hidup)</label>
+                    <input type="number" name="biaya_operasional" value={hwn.biaya_operasional} onChange={handleChange} placeholder="Contoh: 100000" className="w-full px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm font-bold text-red-700 focus:ring-red-500" />
+                  </div>
+                )}
+                
+                <div className="space-y-1.5 flex flex-col">
+                  <label className="text-xs font-bold text-gray-500 uppercase">Keluar ITS?</label>
+                  <select name="penyaluran_luar" value={hwn.penyaluran_luar} onChange={handleChange} className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold uppercase">
+                    <option value="TIDAK">TIDAK (INTERNAL)</option>
+                    <option value="YA">YA (LUAR ITS)</option>
+                  </select>
+                </div>
+              </div>
             </div>
 
             {/* Footer Laci Edit */}

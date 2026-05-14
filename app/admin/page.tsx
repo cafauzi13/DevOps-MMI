@@ -1,60 +1,39 @@
+import { Suspense } from "react";
 import { getPengqurban } from "@/app/actions/pengqurban";
 import { getHewanQurban } from "@/app/actions/hewan";
-import { Users, Activity, TrendingUp, HeartHandshake } from "lucide-react";
+import { Users, Activity, TrendingUp, HeartHandshake, Loader2 } from "lucide-react";
 
-// 👉 1. PASANG ANTENA props searchParams
-export default async function AdminDashboardPage(props: { searchParams: Promise<{ year?: string }> }) {
-  // 👉 2. TANGKAP TAHUN DARI URL
-  const searchParams = await props.searchParams;
-  const year = searchParams.year || "Semua";
-
-  // 👉 3. LEMPAR TAHUNNYA KE BACKEND (Parameter pertama dikosongin aja "" karena kita nggak butuh search teks di dashboard)
+// ==========================================
+// KOMPONEN ANAK: STATISTIK & ACTIVITY (ASYNC)
+// ==========================================
+async function DashboardDataList({ year }: { year: string }) {
+  // 1. Narik Data
   const resPengqurban = await getPengqurban("", year);
   const resHewan = await getHewanQurban("", year);
 
   const pengqurbans = resPengqurban.data || [];
   const hewans = resHewan.data || [];
 
-  // 2. Olah datanya buat dapetin statistik!
+  // 2. Olah datanya buat dapetin statistik
   const totalPengqurban = pengqurbans.length;
   
-  // Hitung Sapi Utuh (Kode 2)
   const sapiUtuh = hewans.filter(h => 
     h.jenis_qurban === "2" || h.jenis_qurban.toLowerCase() === "sapi"
   ).length;
   
-  // Hitung Sapi Patungan (Kode 3)
   const orangPatungan = hewans.filter(h => h.jenis_qurban === "3").length;
-
-  // Logika Syariat: 7 orang = 1 Sapi
   const sapiDariPatungan = Math.floor(orangPatungan / 7);
-  const sisaOrangPatungan = orangPatungan % 7; // Nyari sisa orang yang belum genap 1 sapi
-
+  const sisaOrangPatungan = orangPatungan % 7; 
   const totalSapi = sapiUtuh + sapiDariPatungan;
   
   const totalKambing = hewans.filter(h => 
     h.jenis_qurban === "1" || h.jenis_qurban.toLowerCase() === "kambing"
   ).length;
 
-  // Ambil 5 shohibul qurban terbaru buat di "Recent Activity"
   const recentPengqurban = pengqurbans.slice(0, 5);
 
   return (
-    <div className="space-y-8">
-      {/* === HEADER GREETINGS === */}
-      <div className="bg-gradient-to-r from-mmi to-mmi-hover rounded-3xl p-8 sm:p-10 text-white shadow-lg shadow-mmi/20 relative overflow-hidden">
-        {/* Ornamen Background */}
-        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="relative z-10">
-          <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
-            Ahlan wa Sahlan! ✨
-          </h1>
-          <p className="text-white/90 text-lg max-w-xl font-medium leading-relaxed">
-            Pantau progres penerimaan hewan qurban Masjid Manarul Ilmi secara *real-time*. Semoga lelah panitia RDK 47 menjadi lillah!
-          </p>
-        </div>
-      </div>
-
+    <>
       {/* === STATISTIC CARDS === */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card 1: Shohibul Qurban */}
@@ -78,7 +57,6 @@ export default async function AdminDashboardPage(props: { searchParams: Promise<
             <h3 className="text-3xl font-extrabold text-admin-text">
               {totalSapi} <span className="text-sm font-medium text-gray-400">Ekor</span>
             </h3>
-            {/* Munculin warning kecil kalau ada patungan gantung */}
             {sisaOrangPatungan > 0 && (
               <p className="text-[11px] text-orange-500 font-bold mt-1 bg-orange-50 inline-block px-2 py-0.5 rounded">
                 + {sisaOrangPatungan} orang (belum genap)
@@ -102,7 +80,7 @@ export default async function AdminDashboardPage(props: { searchParams: Promise<
       {/* === RECENT ACTIVITY SECTION === */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Kiri: List Pendaftar Terbaru (Makan porsi lebih besar) */}
+        {/* Kiri: List Pendaftar Terbaru */}
         <div className="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-bold text-admin-text flex items-center gap-2">
@@ -160,6 +138,43 @@ export default async function AdminDashboardPage(props: { searchParams: Promise<
         </div>
 
       </div>
+    </>
+  );
+}
+
+
+// ==========================================
+// KOMPONEN INDUK: UI UTAMA (INSTAN)
+// ==========================================
+export default async function AdminDashboardPage(props: { searchParams: Promise<{ year?: string }> }) {
+  const searchParams = await props.searchParams;
+  const year = searchParams.year || "Semua";
+
+  return (
+    <div className="space-y-8">
+      {/* === HEADER GREETINGS (MUNCUL INSTAN) === */}
+      <div className="bg-gradient-to-r from-mmi to-mmi-hover rounded-3xl p-8 sm:p-10 text-white shadow-lg shadow-mmi/20 relative overflow-hidden">
+        <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="relative z-10">
+          <h1 className="text-3xl sm:text-4xl font-extrabold mb-3 tracking-tight">
+            Ahlan wa Sahlan! ✨
+          </h1>
+          <p className="text-white/90 text-lg max-w-xl font-medium leading-relaxed">
+            Pantau progres penerimaan hewan qurban Masjid Manarul Ilmi secara *real-time*. Semoga lelah panitia RDK 47 menjadi lillah!
+          </p>
+        </div>
+      </div>
+
+      {/* BUNGKUSAN SUSPENSE BUAT STATISTIK */}
+      <Suspense fallback={
+        <div className="p-20 flex flex-col items-center justify-center text-mmi">
+          <Loader2 size={48} className="animate-spin mb-4" />
+          <p className="font-bold text-lg text-gray-500 animate-pulse">Menghitung statistik qurban...</p>
+        </div>
+      }>
+        <DashboardDataList year={year} />
+      </Suspense>
+
     </div>
   );
 }

@@ -40,29 +40,35 @@ model Pengqurban {
 }
 
 model HewanQurban {
-  id_hewan         String   @id @default(uuid())
-  no_id_lama       String?  @unique // NoID dari MS Access
-  nkw_pengqurban   String
-  jenis_qurban     String // e.g., Sapi, Kambing
-  bentuk           String? // e.g., Hidup, Daging
-  uang             Decimal? @db.Decimal(10, 2)
-  penyembelihan    String?
-  melihat          Boolean  @default(false)
-  menyembelih      Boolean  @default(false)
-  jml_bagian       Int?
-  pembagian        String?
-  pesan_bagian     String?
-  kel_sapi         String?
-  no_uq            String?
-  penyaluran       String?
-  lokasi           String?
-  keterangan       String?  @db.Text
-  penerima         String?
-  petugas          String?
-  sebab            String?
-  no_id_surat      String?
+  id_hewan          String   @id @default(uuid())
+  no_id_lama        String?  @unique
+  nkw_pengqurban    String
+  jenis_qurban      String 
+  bentuk            String? 
+  uang              Decimal? @db.Decimal(10, 2)
+  
+  biaya_operasional Decimal? @db.Decimal(10, 2)
+  pindah_sapi       Boolean  @default(false)
+  penyaluran_luar   Boolean  @default(false) // "Keluar ITS"
+  metode_bayar      String?  // TUNAI / TRANSFER
+  status_bayar      String   @default("BELUM LUNAS") // LUNAS / DP / BELUM LUNAS
 
-  // Relasi (Foreign Keys)
+  penyembelihan     String?
+  melihat           Boolean  @default(false)
+  menyembelih       Boolean  @default(false)
+  jml_bagian        Int?
+  pembagian         String?
+  pesan_bagian      String?
+  kel_sapi          String?
+  no_uq             String?
+  penyaluran        String?
+  lokasi            String?
+  keterangan        String?  @db.Text
+  penerima          String?
+  petugas           String?
+  sebab             String?
+  no_id_surat       String?
+
   pengqurban Pengqurban  @relation(fields: [nkw_pengqurban], references: [nkw])
   permohonan Permohonan? @relation(fields: [no_id_surat], references: [no_id_surat])
 }

@@ -51,6 +51,11 @@ export async function createHewan(formData: any) {
         petugas: formData.petugas || null,
         sebab: formData.sebab || null,
         no_id_surat: formData.no_id_surat || null,
+        biaya_operasional: formData.biaya_operasional ? parseFloat(formData.biaya_operasional) : null,
+        pindah_sapi: formData.pindah_sapi === 'YA',
+        penyaluran_luar: formData.penyaluran_luar === 'YA',
+        metode_bayar: formData.metode_bayar || "TUNAI",
+        status_bayar: formData.status_bayar || "BELUM LUNAS",
       }
     });
 
@@ -90,6 +95,11 @@ export async function updateHewan(id_hewan: string, formData: any) {
         petugas: formData.petugas || null,
         sebab: formData.sebab || null,
         no_id_surat: formData.no_id_surat || null,
+        biaya_operasional: formData.biaya_operasional ? parseFloat(formData.biaya_operasional) : null,
+        pindah_sapi: formData.pindah_sapi === 'YA',
+        penyaluran_luar: formData.penyaluran_luar === 'YA',
+        metode_bayar: formData.metode_bayar || "TUNAI",
+        status_bayar: formData.status_bayar || "BELUM LUNAS",
       }
     });
 

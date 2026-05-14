@@ -160,7 +160,7 @@ export default async function AdminDashboardPage(props: { searchParams: Promise<
             Ahlan wa Sahlan! ✨
           </h1>
           <p className="text-white/90 text-lg max-w-xl font-medium leading-relaxed">
-            Pantau progres penerimaan hewan qurban Masjid Manarul Ilmi secara *real-time*. Semoga lelah panitia RDK 47 menjadi lillah!
+            Pantau progres penerimaan hewan qurban Masjid Manarul Ilmi secara real-time. Semoga lelah panitia Qurban menjadi lillah!
           </p>
         </div>
       </div>

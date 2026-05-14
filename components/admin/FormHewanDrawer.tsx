@@ -50,7 +50,7 @@ export default function AddHewanModal() {
       {/* TOMBOL TRIGGER (Yang dipajang di halaman utama) */}
       <button 
         onClick={() => setIsOpen(true)} 
-        className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md shadow-emerald-500/20"
+        className="bg-mmi hover:bg-mmi-hover text-white px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-all shadow-md shadow-mmi/20"
       >
         <Plus size={18} /> Tambah Hewan
       </button>

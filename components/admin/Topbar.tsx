@@ -3,13 +3,13 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Bell, UserCircle, Calendar, ChevronDown } from "lucide-react"; 
 import { setYearFilter } from "@/app/actions/filter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { generateHijriYearList } from "@/app/lib/hijri";
 
 export default function Topbar({ 
   userName, 
   userRole, 
-  initialYear = "Semua" 
+  initialYear // ✨ Default "Semua" kita hapus biar bisa dinamis
 }: { 
   userName?: string, 
   userRole?: string,
@@ -21,12 +21,24 @@ export default function Topbar({
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // 👉 Bikin array list tahun yang bener (ditambah "Semua" di awal)
+  // 👉 Bikin array list tahun
   const dynamicYears = generateHijriYearList();
+  const currentHijriYear = dynamicYears[0]; // ✨ Ambil tahun terbaru otomatis (misal: 1447)
   const yearList = ["Semua", ...dynamicYears]; 
 
-  // 👉 Ambil activeYear langsung dari URL biar sinkron 100%
-  const activeYear = searchParams.get("year") || initialYear;
+  // 👉 Logika Prioritas: URL -> Cookie (initialYear) -> Tahun Saat Ini (1447)
+  const activeYear = searchParams.get("year") || initialYear || currentHijriYear;
+
+  // 🛡️ ✨ MAGIC FIX: SATPAM URL!
+  // Kalau pindah menu via Sidebar (URL jadi bersih), Topbar bakal otomatis 
+  // nyuntikin activeYear ke URL lagi biar data tabel tetep sinkron!
+  useEffect(() => {
+    if (!searchParams.has("year")) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("year", activeYear);
+      router.replace(`${pathname}?${params.toString()}`);
+    }
+  }, [pathname, searchParams, activeYear, router]);
 
   const getPageTitle = () => {
     if (pathname === "/admin") return "Dashboard Utama";
@@ -37,18 +49,17 @@ export default function Topbar({
 
   // Fungsi ganti tahun yang beneran ngubah URL!
   const handleYearChange = async (year: string) => {
-    setIsDropdownOpen(false); // Tutup dropdown habis milih
+    setIsDropdownOpen(false); 
     
     // 1. UPDATE URL PARAMS BIAR HALAMAN REFRESH DATANYA
     const params = new URLSearchParams(searchParams.toString());
-    if (year === "Semua") {
-      params.delete("year");
-    } else {
-      params.set("year", year);
-    }
+    
+    // ✨ FIX: Sekarang "Semua" juga kita set di URL, jangan di-delete!
+    // Biar page.tsx tau kalau kita beneran minta "Semua Waktu"
+    params.set("year", year);
     router.push(`${pathname}?${params.toString()}`);
 
-    // 2. FUNGSI BAWAAN KAMU TETEP JALAN
+    // 2. FUNGSI BAWAAN KAMU TETEP JALAN (Simpan ke Cookie)
     try {
       await setYearFilter(year); 
     } catch (error) {
@@ -110,8 +121,7 @@ export default function Topbar({
         <div className="flex items-center gap-3 border-l border-gray-200 pl-6">
           <div className="text-right hidden md:block">
             <p className="text-sm font-bold text-admin-text leading-tight">{userName || "User"}</p>
-            {/* Aku panggil relasi jabatan kamu di sertifikat buat nampilin rolenya sekalian kalau kosong wkwkwk */}
-            <p className="text-xs text-mmi font-medium">{userRole || "STAFF"}</p>
+            <p className="text-xs text-mmi font-medium">{userRole || "STAF"}</p>
           </div>
           <div className="w-9 h-9 bg-mmi-light rounded-full flex items-center justify-center text-mmi">
             <UserCircle size={24} />

@@ -5,16 +5,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Kita set ke postgresql karena kita mau pakai Supabase
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
-
-// ==========================================
-// 1. DATA MASTER & TRANSAKSI UTAMA
-// ==========================================
 
 model Pengqurban {
   id_pengqurban  String   @id @default(uuid())
@@ -70,6 +65,8 @@ model HewanQurban {
   petugas           String?
   sebab             String?
   no_id_surat       String?
+  opsi_pesan        String?   @default("PASRAH")
+  pengambilan_pesan String?   @default("AMBIL")
 
   pengqurban Pengqurban  @relation(fields: [nkw_pengqurban], references: [nkw])
   permohonan Permohonan? @relation(fields: [no_id_surat], references: [no_id_surat])
@@ -104,10 +101,6 @@ model SapiTerpisah {
   // Relasi
   pengqurban Pengqurban @relation(fields: [nkw_pengqurban], references: [nkw])
 }
-
-// ==========================================
-// 2. DATA OPERASIONAL LAPANGAN & KEUANGAN
-// ==========================================
 
 model PetugasJaga {
   id_petugas String @id @default(uuid())
@@ -156,10 +149,6 @@ model KuitansiTaktisDetail {
   kuitansi KuitansiTaktis @relation(fields: [no_kw], references: [no_kw])
 }
 
-// ==========================================
-// 3. DATA PENGGUNA (AUTHENTICATION & RBAC)
-// ==========================================
-
 model User {
   id        String   @id @default(uuid())
   username  String   @unique
@@ -168,4 +157,24 @@ model User {
   role      String   @default("STAF") // Bisa diisi: "ADMIN", "BENDAHARA", "STAF"
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PermohonanOnline {
+  id_permohonan      String   @id @default(uuid())
+  tanggal_submit     DateTime @default(now())
+  status             String   @default("BELUM_DICEK")
+
+  // 👤 DATA SHOHIBUL
+  nama_lengkap       String
+  telepon            String?
+  asal_wilayah       String?
+  alamat             String?  @db.Text
+
+  // 🐄 DATA HEWAN (JSON String)
+  // Isinya nanti array: [{jenis, bentuk, nominal, melihat, menyembelih, penyaluran, pesan, dll}]
+  daftar_hewan       String   @db.Text 
+
+  // 💳 PEMBAYARAN
+  total_pembayaran   Decimal  @db.Decimal(12, 2)
+  bukti_bayar        String?  // URL/Nama file di Supabase
 }

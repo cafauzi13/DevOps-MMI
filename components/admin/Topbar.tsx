@@ -1,10 +1,11 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Bell, UserCircle, Calendar, ChevronDown } from "lucide-react"; 
+import { Bell, UserCircle, Calendar, ChevronDown, Menu } from "lucide-react"; 
 import { setYearFilter } from "@/app/actions/filter";
 import { useState, useEffect } from "react";
 import { generateHijriYearList } from "@/app/lib/hijri";
+import { useSidebar } from "./SidebarContext";
 
 export default function Topbar({ 
   userName, 
@@ -18,6 +19,7 @@ export default function Topbar({
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toggle } = useSidebar();
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -68,10 +70,18 @@ export default function Topbar({
   };
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-8 sticky top-0 z-50">
-      <h2 className="text-xl font-bold text-admin-text">{getPageTitle()}</h2>
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={toggle}
+          className="p-2 -ml-2 text-gray-500 hover:text-mmi hover:bg-mmi/5 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-mmi/20 lg:hidden"
+        >
+          <Menu size={24} />
+        </button>
+        <h2 className="text-lg md:text-xl font-bold text-admin-text truncate max-w-[150px] sm:max-w-xs md:max-w-full">{getPageTitle()}</h2>
+      </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-2 md:gap-6">
         
         {/* === CUSTOM UI DROPDOWN TAHUN === */}
         <div className="relative">

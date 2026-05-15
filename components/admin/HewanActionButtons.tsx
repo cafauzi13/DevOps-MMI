@@ -261,7 +261,37 @@ export default function HewanActionButtons({ data }: { data: any }) {
               {/* Loop Shohibul */}
               {membersList.map((m: any, idx: number) => (
                 <div key={m.id_hewan} className="bg-white border border-gray-200 p-5 rounded-2xl shadow-sm">
-                  <h5 className="font-bold text-gray-800 border-b pb-2 mb-3"><span className="text-emerald-600 mr-1">{idx + 1}.</span> {m.pengqurban?.nama_lengkap || "Tanpa Nama"}</h5>
+                  {/* ✨ INI DIA YANG DITUNGGU: HEADER NAMA + TOMBOL AKSI ✨ */}
+                  <div className="flex justify-between items-center border-b border-gray-200 pb-2 mb-3">
+                    <h5 className="font-bold text-gray-800">
+                      <span className="text-emerald-600 mr-1">{idx + 1}.</span> {m.pengqurban?.nama_lengkap || "Tanpa Nama"}
+                    </h5>
+                    
+                    {/* Tombol Khusus Edit & Delete per Anggota Sapi Patungan */}
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={() => {
+                          setIsDetailOpen(false); // Tutup drawer detail biar ga numpuk
+                          setTimeout(() => handleActionOpenEdit(m), 300); // Buka form edit
+                        }} 
+                        className="p-1.5 text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors" 
+                        title="Edit Data Anggota"
+                      >
+                        <Edit size={14} />
+                      </button>
+                      
+                      <button 
+                        onClick={() => {
+                          setIsDetailOpen(false);
+                          setTimeout(() => handleActionOpenDelete(m), 300); // Buka modal hapus
+                        }} 
+                        className="p-1.5 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg transition-colors" 
+                        title="Hapus Anggota"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
                   
                   <div className="grid grid-cols-2 gap-y-4 gap-x-3 mb-4">
                     <div><p className="text-[10px] text-gray-400 font-bold uppercase">Bentuk</p><p className="font-bold text-sm text-gray-700">{m.bentuk || "-"}</p></div>

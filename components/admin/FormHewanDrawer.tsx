@@ -8,8 +8,6 @@ import toast from "react-hot-toast";
 export default function FormHewanDrawer({ defaultNkw }: { defaultNkw?: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // ✨ STATE CONTROL DROPDOWN (Biar estetik)
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   const [groupStats, setGroupStats] = useState<Record<string, number>>({});
@@ -20,7 +18,11 @@ export default function FormHewanDrawer({ defaultNkw }: { defaultNkw?: string })
     nkw_pengqurban: defaultNkw || "",
     jenis_qurban: "1", bentuk: "UANG", uang: "", kel_sapi: "",
     metode_bayar: "TUNAI", status_bayar: "BELUM LUNAS", biaya_operasional: "",
-    melihat: "TIDAK", menyembelih: "TIDAK", penyaluran: "DALAM", jml_bagian: "", pesan_bagian: "",
+    
+    // ✨ STATE TEKNIS & DISTRIBUSI (UDAH DI-UPDATE!)
+    melihat: "TIDAK", menyembelih: "TIDAK", penyaluran: "DALAM", jml_bagian: "", 
+    opsi_pesan: "PASRAH", pesan_bagian: "", pengambilan_pesan: "AMBIL",
+    
     no_uq: "", lokasi: "", keterangan: "", penerima: "", petugas: "", sebab: "", pindah_sapi: "TIDAK",
   });
 
@@ -90,8 +92,7 @@ export default function FormHewanDrawer({ defaultNkw }: { defaultNkw?: string })
       : <p className="text-[10px] text-emerald-600 font-bold mt-1 uppercase">✨ Kurang {missing} Orang Lagi</p>;
   };
 
-  // ✨ HELPER KOMPONEN DROPDOWN ESTETIK (Sesuai Screenshot Asal Pengqurban)
-  const CustomSelect = ({ label, value, options, name, icon: Icon }: any) => {
+  const CustomSelect = ({ label, value, options, name }: any) => {
     const activeLabel = options.find((opt: any) => opt.val === value)?.label || value;
     const isDropdownOpen = openDropdown === name;
 
@@ -105,7 +106,6 @@ export default function FormHewanDrawer({ defaultNkw }: { defaultNkw?: string })
           <span className="text-sm font-bold text-gray-700 uppercase">{activeLabel}</span>
           <ChevronDown size={18} className={`text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-emerald-500' : ''}`} />
         </div>
-        
         {isDropdownOpen && (
           <>
             <div className="fixed inset-0 z-30" onClick={() => setOpenDropdown(null)} />
@@ -165,21 +165,14 @@ export default function FormHewanDrawer({ defaultNkw }: { defaultNkw?: string })
                 </div>
               )}
 
+              {/* INFORMASI HEWAN */}
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
                 <h4 className="font-black text-mmi text-xs uppercase tracking-widest border-b border-gray-100 pb-3 flex items-center gap-2">
                   <div className="w-1.5 h-4 bg-mmi rounded-full"></div> Informasi Hewan & Nominal
                 </h4>
                 <div className="grid grid-cols-2 gap-5">
-                  
-                  <CustomSelect 
-                    label="Jenis Qurban" name="jenis_qurban" value={hwn.jenis_qurban}
-                    options={[{val:"1", label:"KAMBING 🐐"}, {val:"2", label:"SAPI UTUH 🐄"}, {val:"3", label:"SAPI PATUNGAN 🤝"}]}
-                  />
-
-                  <CustomSelect 
-                    label="Bentuk Titipan" name="bentuk" value={hwn.bentuk}
-                    options={[{val:"UANG", label:"UANG 💵"}, {val:"HEWAN", label:"HEWAN HIDUP 🥩"}]}
-                  />
+                  <CustomSelect label="Jenis Qurban" name="jenis_qurban" value={hwn.jenis_qurban} options={[{val:"1", label:"KAMBING 🐐"}, {val:"2", label:"SAPI UTUH 🐄"}, {val:"3", label:"SAPI PATUNGAN 🤝"}]} />
+                  <CustomSelect label="Bentuk Titipan" name="bentuk" value={hwn.bentuk} options={[{val:"UANG", label:"UANG 💵"}, {val:"HEWAN", label:"HEWAN HIDUP 🥩"}]} />
 
                   <div className="space-y-1.5 flex flex-col">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nominal Uang (Rp)</label>
@@ -200,7 +193,7 @@ export default function FormHewanDrawer({ defaultNkw }: { defaultNkw?: string })
                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all ${hwn.pindah_sapi === "YA" ? "bg-orange-500 border-orange-500 text-white" : "border-orange-200 bg-white group-hover:border-orange-400"}`}>
                            {hwn.pindah_sapi === "YA" && <CheckSquare size={16} />}
                          </div>
-                         <p className="text-xs font-bold text-orange-800 uppercase tracking-tight">Bersedia dipindahkan ke Sapi Patungan (Jika kuota sapi kurang)</p>
+                         <p className="text-xs font-bold text-orange-800 uppercase tracking-tight">Bersedia dipindahkan ke Sapi Patungan</p>
                        </div>
                      </div>
                   )}
@@ -216,7 +209,7 @@ export default function FormHewanDrawer({ defaultNkw }: { defaultNkw?: string })
                     {namaSapiUtuh.map((nama, idx) => (
                       <div key={idx} className="flex items-center gap-2">
                         <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 text-[10px] font-black flex items-center justify-center shrink-0">{idx + 1}</span>
-                        <input type="text" value={nama} onChange={(e) => handleNamaSapiChange(idx, e.target.value)} placeholder="NAMA..." className="w-full px-3 py-2 bg-white border border-purple-100 rounded-lg text-xs font-bold uppercase outline-none focus:border-purple-400" />
+                        <input type="text" value={nama} onChange={(e) => handleNamaSapiChange(idx, e.target.value)} placeholder={`NAMA ${idx + 1}...`} className="w-full px-3 py-2 bg-white border border-purple-100 rounded-lg text-xs font-bold uppercase outline-none focus:border-purple-400" />
                       </div>
                     ))}
                   </div>
@@ -228,14 +221,8 @@ export default function FormHewanDrawer({ defaultNkw }: { defaultNkw?: string })
                   <div className="w-1.5 h-4 bg-mmi rounded-full"></div> Pembayaran & Administrasi
                 </h4>
                 <div className="grid grid-cols-2 gap-5">
-                  <CustomSelect 
-                    label="Metode Bayar" name="metode_bayar" value={hwn.metode_bayar}
-                    options={[{val:"TUNAI", label:"TUNAI 💵"}, {val:"TRANSFER", label:"TRANSFER 💳"}]}
-                  />
-                  <CustomSelect 
-                    label="Status Bayar" name="status_bayar" value={hwn.status_bayar}
-                    options={[{val:"LUNAS", label:"LUNAS ✅"}, {val:"DP", label:"DP 💰"}, {val:"BELUM LUNAS", label:"BELUM LUNAS ❌"}]}
-                  />
+                  <CustomSelect label="Metode Bayar" name="metode_bayar" value={hwn.metode_bayar} options={[{val:"TUNAI", label:"TUNAI 💵"}, {val:"TRANSFER", label:"TRANSFER 💳"}]} />
+                  <CustomSelect label="Status Bayar" name="status_bayar" value={hwn.status_bayar} options={[{val:"LUNAS", label:"LUNAS ✅"}, {val:"DP", label:"DP 💰"}, {val:"BELUM LUNAS", label:"BELUM LUNAS ❌"}]} />
                   
                   <div className="col-span-2 space-y-1.5">
                      <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bukti Transfer (Opsional)</label>
@@ -250,31 +237,39 @@ export default function FormHewanDrawer({ defaultNkw }: { defaultNkw?: string })
                 </div>
               </div>
 
+              {/* ✨ TEKNIS LAPANGAN (SUDAH DISINKRONKAN DENGAN PUBLIC FORM) ✨ */}
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
                 <h4 className="font-black text-mmi text-xs uppercase tracking-widest border-b border-gray-100 pb-3 flex items-center gap-2">
-                  <div className="w-1.5 h-4 bg-mmi rounded-full"></div> Penyembelihan & Distribusi
+                  <div className="w-1.5 h-4 bg-mmi rounded-full"></div> Teknis Lapangan & Distribusi
                 </h4>
-                <div className="grid grid-cols-2 gap-5">
-                  <CustomSelect 
-                    label="Hadir Melihat?" name="melihat" value={hwn.melihat}
-                    options={[{val:"YA", label:"YA 👀"}, {val:"TIDAK", label:"TIDAK ❌"}]}
-                  />
-                  <CustomSelect 
-                    label="Penyaluran" name="penyaluran" value={hwn.penyaluran}
-                    options={[{val:"DALAM", label:"DALAM (ITS) 🏢"}, {val:"LUAR", label:"LUAR (EKSTERNAL) 🌍"}]}
-                  />
-                  <CustomSelect 
-                    label="Ikut Menyembelih?" name="menyembelih" value={hwn.menyembelih}
-                    options={[{val:"YA", label:"YA 🔪"}, {val:"TIDAK", label:"TIDAK ❌"}]}
-                  />
+                <div className="grid grid-cols-2 gap-5 mb-2">
+                  <CustomSelect label="Hadir Melihat?" name="melihat" value={hwn.melihat} options={[{val:"YA", label:"YA 👀"}, {val:"TIDAK", label:"TIDAK ❌"}]} />
+                  <CustomSelect label="Ikut Menyembelih?" name="menyembelih" value={hwn.menyembelih} options={[{val:"YA", label:"YA 🔪"}, {val:"TIDAK", label:"TIDAK ❌"}]} />
+                  <CustomSelect label="Sembelih di Luar MMI?" name="penyaluran" value={hwn.penyaluran} options={[{val:"LUAR", label:"YA, BERSEDIA 🌍"}, {val:"DALAM", label:"TIDAK (HARUS DI MMI) 🏢"}]} />
                   <div className="space-y-1.5 flex flex-col">
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jml Bagian (Angka)</label>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jml Bagian (Bungkus)</label>
                     <input type="number" name="jml_bagian" value={hwn.jml_bagian} onChange={handleChange} placeholder="1" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-emerald-500 transition-all" />
                   </div>
                 </div>
-                <div className="space-y-1.5 mt-2 flex flex-col">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pesan Bagian Khusus</label>
-                  <textarea name="pesan_bagian" rows={2} value={hwn.pesan_bagian} onChange={handleChange} placeholder="CONTOH: MINTA KEPALA SAPI..." className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold uppercase resize-none outline-none focus:border-emerald-500 transition-all" />
+
+                <div className="border-t border-gray-100 pt-5">
+                    <CustomSelect 
+                        label="Permintaan Bagian Daging" name="opsi_pesan" value={hwn.opsi_pesan} 
+                        options={[{val:"PASRAH", label:"DISERAHKAN KE PANITIA"}, {val:"KHUSUS", label:"ADA PERMINTAAN KHUSUS"}]} 
+                    />
+                    
+                    {hwn.opsi_pesan === "KHUSUS" && (
+                        <div className="grid grid-cols-2 gap-5 mt-4 bg-gray-50 p-5 rounded-2xl border border-gray-200 animate-in zoom-in-95">
+                            <div className="space-y-1.5 flex flex-col">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Detail Permintaan</label>
+                                <textarea name="pesan_bagian" rows={2} value={hwn.pesan_bagian} onChange={handleChange} placeholder="CTH: MINTA KEPALA SAPI..." className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold uppercase resize-none outline-none focus:border-emerald-500 transition-all" />
+                            </div>
+                            <CustomSelect 
+                                label="Pengambilan Bagian" name="pengambilan_pesan" value={hwn.pengambilan_pesan} 
+                                options={[{val:"AMBIL", label:"AMBIL SENDIRI KE MMI"}, {val:"DIANTAR", label:"DIANTAR KE ALAMAT"}]} 
+                            />
+                        </div>
+                    )}
                 </div>
               </div>
 

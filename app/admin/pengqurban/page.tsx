@@ -14,7 +14,7 @@ async function PengqurbanTableList({ query, year }: { query: string; year: strin
 
   return (
     <>
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto w-full">
         <table className="w-full text-left text-sm whitespace-nowrap">
           <thead className="bg-gray-50 text-gray-600 font-semibold border-b border-gray-100">
             <tr>

@@ -1,0 +1,20 @@
+# Aturan Utama Proyek Sistem Qurban Masjid Manarul Ilmi
+
+## Tech Stack
+- Framework: Next.js 14+ (App Router)
+- Bahasa: TypeScript
+- Styling: Tailwind CSS
+- Database ORM: Prisma
+- Database: Supabase (PostgreSQL)
+
+## Panduan UI/UX (Manarul Ilmi Style)
+- Gunakan skema warna dominan Emerald (hijau MMI) untuk primary actions, dan clean white/gray-50 untuk background.
+- Gunakan rounded-xl atau rounded-2xl untuk card dan input.
+- Class utility wajib: shadow-sm, border-gray-100/200, ring-emerald-500.
+- Hindari penggunaan UI default browser (misal: alert atau confirm), gunakan custom modal/toast dari react-hot-toast.
+
+## Panduan Kodingan
+- Jangan menghapus komentar atau kode existing yang tidak relevan dengan task.
+- Jika membuat tabel, selalu pastikan tabel tersebut dibungkus dengan `<div className="overflow-x-auto">` agar mobile-friendly.
+- Selalu gunakan `use client` untuk komponen interaktif.
+- Wajib mengecek tahun Hijriyah yang sedang aktif jika berhubungan dengan NKW atau filtering data.

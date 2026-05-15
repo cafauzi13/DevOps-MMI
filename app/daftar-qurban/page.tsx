@@ -20,29 +20,28 @@ export default function DaftarQurbanPublic() {
 
   // 👤 STATE 1: DATA DIRI
   const [personalData, setPersonalData] = useState({
-    nama_lengkap: "", telepon: "", asal_wilayah: "ITS", alamat: "",
+    nama_lengkap: "", telepon: "", asal_wilayah: "", alamat: "",
   });
 
   // 🐄 STATE 2 & 3: HEWAN & OPERASIONAL
   const [animals, setAnimals] = useState([
     { 
       id: Date.now(), 
-      jenis: "1", bentuk: "UANG", nominal: 4000000,
+      jenis: "", bentuk: "", nominal: 0,
       pindah_sapi: false, 
-      nama_shohibul_sapi: ["", "", "", "", "", "", ""], // ✨ 7 Nama nempel di masing-masing hewan
+      nama_shohibul_sapi: ["", "", "", "", "", "", ""], 
       
-      // Teknis Lapangan
-      melihat: false, 
-      menyembelih: false, 
-      penyaluran: "DALAM", // DALAM = Tidak bersedia di luar, LUAR = Bersedia
+      melihat: "", 
+      menyembelih: "", 
+      penyaluran: "", 
       jml_bagian: 1, 
       
-      // Permintaan Khusus
-      opsi_pesan: "PASRAH", // "PASRAH" | "KHUSUS"
+      opsi_pesan: "", 
       pesan: "", 
-      pengambilan_pesan: "AMBIL" // "AMBIL" | "DIANTAR"
+      pengambilan_pesan: ""
     }
   ]);
+  const [showErrors, setShowErrors] = useState(false);
 
   const [fileBukti, setFileBukti] = useState<File | null>(null);
 
@@ -58,10 +57,10 @@ export default function DaftarQurbanPublic() {
 
   const addAnimal = () => {
     setAnimals([...animals, { 
-      id: Date.now(), jenis: "1", bentuk: "UANG", nominal: 4000000,
+      id: Date.now(), jenis: "", bentuk: "", nominal: 0,
       pindah_sapi: false, nama_shohibul_sapi: ["", "", "", "", "", "", ""],
-      melihat: false, menyembelih: false, penyaluran: "DALAM", jml_bagian: 1, 
-      opsi_pesan: "PASRAH", pesan: "", pengambilan_pesan: "AMBIL"
+      melihat: "", menyembelih: "", penyaluran: "", jml_bagian: 1, 
+      opsi_pesan: "", pesan: "", pengambilan_pesan: ""
     }]);
   };
 
@@ -95,8 +94,64 @@ export default function DaftarQurbanPublic() {
 
   const totalPrice = animals.reduce((sum, a) => sum + a.nominal, 0);
 
-  const nextStep = () => setStep(s => s + 1);
-  const prevStep = () => setStep(s => s - 1);
+  const nextStep = () => {
+    // Validasi Step 1: Data Diri
+    if (step === 1) {
+      if (!personalData.nama_lengkap.trim() || !personalData.telepon.trim() || !personalData.asal_wilayah.trim() || !personalData.alamat.trim()) {
+        setShowErrors(true);
+        if (!personalData.nama_lengkap.trim()) return toast.error("Nama lengkap wajib diisi!");
+        if (!personalData.telepon.trim()) return toast.error("No. WhatsApp wajib diisi!");
+        if (!personalData.asal_wilayah.trim()) return toast.error("Asal wilayah wajib dipilih!");
+        if (!personalData.alamat.trim()) return toast.error("Alamat pengiriman wajib diisi!");
+      }
+    }
+
+    // Validasi Step 2: Hewan Qurban
+    if (step === 2) {
+      for (let i = 0; i < animals.length; i++) {
+        const a = animals[i];
+        if (!a.jenis || !a.bentuk || !a.nominal || a.nominal <= 0 || (a.jenis === "2" && !a.nama_shohibul_sapi[0].trim())) {
+          setShowErrors(true);
+          if (!a.jenis) return toast.error(`Jenis hewan ke-${i + 1} wajib dipilih!`);
+          if (!a.bentuk) return toast.error(`Bentuk titipan hewan ke-${i + 1} wajib dipilih!`);
+          if (!a.nominal || a.nominal <= 0) return toast.error(`Nominal biaya hewan ke-${i + 1} wajib lebih dari 0!`);
+          if (a.jenis === "2" && !a.nama_shohibul_sapi[0].trim()) return toast.error(`Nama shohibul hewan ke-${i + 1} (Sapi Utuh) wajib diisi minimal 1 nama pertama!`);
+        }
+      }
+    }
+
+    // Validasi Step 3: Operasional
+    if (step === 3) {
+      for (let i = 0; i < animals.length; i++) {
+        const a = animals[i];
+        if (!a.melihat || !a.menyembelih || !a.penyaluran || !a.jml_bagian || a.jml_bagian < 1 || !a.opsi_pesan || (a.opsi_pesan === "KHUSUS" && !a.pesan.trim()) || (a.opsi_pesan === "KHUSUS" && !a.pengambilan_pesan)) {
+          setShowErrors(true);
+          if (!a.melihat) return toast.error(`Kehadiran melihat hewan ke-${i + 1} wajib dipilih!`);
+          if (!a.menyembelih) return toast.error(`Partisipasi menyembelih hewan ke-${i + 1} wajib dipilih!`);
+          if (!a.penyaluran) return toast.error(`Penyaluran sembelih hewan ke-${i + 1} wajib dipilih!`);
+          if (!a.jml_bagian || a.jml_bagian < 1) return toast.error(`Jumlah bagian daging hewan ke-${i + 1} wajib minimal 1!`);
+          if (!a.opsi_pesan) return toast.error(`Opsi permintaan daging hewan ke-${i + 1} wajib dipilih!`);
+          if (a.opsi_pesan === "KHUSUS" && !a.pesan.trim()) return toast.error(`Detail permintaan khusus hewan ke-${i + 1} wajib diisi!`);
+          if (a.opsi_pesan === "KHUSUS" && !a.pengambilan_pesan) return toast.error(`Opsi pengambilan pesan khusus hewan ke-${i + 1} wajib dipilih!`);
+        }
+      }
+    }
+
+    // Validasi Step 4: Pembayaran
+    if (step === 4) {
+      if (!fileBukti) {
+        setShowErrors(true);
+        return toast.error("Bukti transfer pembayaran wajib diupload!");
+      }
+    }
+
+    setShowErrors(false);
+    setStep(s => s + 1);
+  };
+  const prevStep = () => {
+    setShowErrors(false);
+    setStep(s => s - 1);
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ✨ FUNGSI SAKTI BUAT NGIRIM KE DATABASE
@@ -130,18 +185,22 @@ export default function DaftarQurbanPublic() {
 
   const goToStep = (targetStep: number) => setStep(targetStep);
 
-  const CustomSelect = ({ label, value, options, onChange, name, disabled = false }: any) => {
-    const activeLabel = options.find((opt: any) => opt.val === value)?.label || value;
+  const CustomSelect = ({ label, value, options, onChange, name, disabled = false, error = false }: any) => {
+    const activeLabel = options.find((opt: any) => opt.val === value)?.label || "PILIH OPSI...";
     const isDropdownOpen = openDropdown === name;
+
+    const baseBorder = error 
+      ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50' 
+      : (isDropdownOpen ? 'bg-gray-50 border-emerald-500 ring-2 ring-emerald-500/10' : 'bg-gray-50 border-gray-200');
 
     return (
       <div className={`space-y-1.5 flex flex-col relative ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}>
         <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">{label}</label>
         <div 
           onClick={() => !disabled && setOpenDropdown(isDropdownOpen ? null : name)}
-          className={`w-full px-4 py-3.5 bg-gray-50 border ${isDropdownOpen ? 'border-emerald-500 ring-2 ring-emerald-500/10' : 'border-gray-200'} rounded-xl flex items-center justify-between transition-all ${disabled ? 'bg-gray-100' : 'cursor-pointer hover:border-emerald-500/50'}`}
+          className={`w-full px-4 py-3.5 border ${baseBorder} rounded-xl flex items-center justify-between transition-all ${disabled ? 'bg-gray-100' : 'cursor-pointer hover:border-emerald-500/50'}`}
         >
-          <span className="text-xs font-bold text-gray-700 uppercase">{activeLabel}</span>
+          <span className={`text-xs font-bold uppercase ${!value ? 'text-gray-400' : (error ? 'text-red-700' : 'text-gray-700')}`}>{activeLabel}</span>
           {!disabled && <ChevronDown size={16} className={`text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-emerald-500' : ''}`} />}
         </div>
         {isDropdownOpen && !disabled && (
@@ -290,7 +349,7 @@ export default function DaftarQurbanPublic() {
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Nama Shohibul (Dengan Gelar)</label>
                   <div className="relative">
                       <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                      <input value={personalData.nama_lengkap} onChange={(e)=>setPersonalData({...personalData, nama_lengkap: e.target.value})} type="text" placeholder="CONTOH: FULAN BIN FULAN" className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38] transition-all outline-none" />
+                      <input value={personalData.nama_lengkap} onChange={(e)=>setPersonalData({...personalData, nama_lengkap: e.target.value})} type="text" placeholder="CONTOH: FULAN BIN FULAN" className={`w-full pl-11 pr-4 py-3.5 border rounded-xl text-xs font-bold focus:outline-none transition-all ${showErrors && !personalData.nama_lengkap.trim() ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50 placeholder-red-300 text-red-700' : 'bg-gray-50 border-gray-200 focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38]'}`} />
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -298,7 +357,7 @@ export default function DaftarQurbanPublic() {
                       <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">No. WhatsApp</label>
                       <div className="relative">
                           <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                          <input value={personalData.telepon} onChange={(e)=>setPersonalData({...personalData, telepon: e.target.value})} type="text" placeholder="0812xxxx" className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38] transition-all outline-none" />
+                          <input value={personalData.telepon} onChange={(e)=>setPersonalData({...personalData, telepon: e.target.value})} type="text" placeholder="0812xxxx" className={`w-full pl-11 pr-4 py-3.5 border rounded-xl text-xs font-bold focus:outline-none transition-all ${showErrors && !personalData.telepon.trim() ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50 placeholder-red-300 text-red-700' : 'bg-gray-50 border-gray-200 focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38]'}`} />
                       </div>
                   </div>
                   {/* ✨ DROPDOWN ASAL WILAYAH (FULL LIST) */}
@@ -306,13 +365,14 @@ export default function DaftarQurbanPublic() {
                     label="Asal Wilayah" name="asal_wilayah" value={personalData.asal_wilayah} 
                     onChange={(val:any) => setPersonalData({...personalData, asal_wilayah: val})} 
                     options={wilayahCodes.map(kode => ({ val: kode, label: formatWilayah(kode).toUpperCase() }))} 
+                    error={showErrors && !personalData.asal_wilayah}
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Alamat Pengiriman Daging</label>
                   <div className="relative">
                       <MapPin className="absolute left-4 top-3.5 text-gray-400" size={16} />
-                      <textarea value={personalData.alamat} onChange={(e)=>setPersonalData({...personalData, alamat: e.target.value})} rows={3} placeholder="TULIS ALAMAT LENGKAP..." className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold resize-none focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38] transition-all outline-none" />
+                      <textarea value={personalData.alamat} onChange={(e)=>setPersonalData({...personalData, alamat: e.target.value})} rows={3} placeholder="TULIS ALAMAT LENGKAP..." className={`w-full pl-11 pr-4 py-3.5 border rounded-xl text-xs font-bold resize-none focus:outline-none transition-all ${showErrors && !personalData.alamat.trim() ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50 placeholder-red-300 text-red-700' : 'bg-gray-50 border-gray-200 focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38]'}`} />
                   </div>
                 </div>
               </div>
@@ -340,12 +400,14 @@ export default function DaftarQurbanPublic() {
                         label={`Jenis Hewan Ke-${index+1}`} name={`jenis_${ani.id}`} value={ani.jenis} 
                         onChange={(val:any)=>updateAnimal(ani.id, 'jenis', val)} 
                         options={[{val:"1", label:"🐐 KAMBING"}, {val:"3", label:"🤝 SAPI PATUNGAN"}, {val:"2", label:"🐄 SAPI UTUH"}]} 
+                        error={showErrors && !ani.jenis}
                       />
                       <CustomSelect 
                         label="Bentuk Titipan" name={`bentuk_${ani.id}`} value={ani.bentuk} 
                         onChange={(val:any)=>updateAnimal(ani.id, 'bentuk', val)} 
                         disabled={ani.jenis === "3"} 
                         options={[{val:"UANG", label:"💵 TITIP UANG"}, {val:"HEWAN", label:"🥩 BAWA HEWAN"}]} 
+                        error={showErrors && !ani.bentuk}
                       />
                     </div>
 
@@ -357,7 +419,7 @@ export default function DaftarQurbanPublic() {
                                 {ani.nama_shohibul_sapi.map((nama, i) => (
                                     <div key={i} className="flex items-center gap-2">
                                         <span className="w-6 h-6 rounded-full bg-purple-200 text-purple-700 text-[10px] font-black flex items-center justify-center shrink-0">{i + 1}</span>
-                                        <input type="text" value={nama} onChange={(e) => updateNamaSapi(ani.id, i, e.target.value)} placeholder={`NAMA ${i+1}`} className="w-full px-3 py-2.5 bg-white border border-purple-100 rounded-lg text-xs font-bold outline-none focus:border-purple-400 transition-all" />
+                                        <input type="text" value={nama} onChange={(e) => updateNamaSapi(ani.id, i, e.target.value)} placeholder={`NAMA ${i+1}`} className={`w-full px-3 py-2.5 bg-white border rounded-lg text-xs font-bold outline-none transition-all ${showErrors && i === 0 && !nama.trim() ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50 placeholder-red-300 text-red-700' : 'border-purple-100 focus:border-purple-400'}`} />
                                     </div>
                                 ))}
                             </div>
@@ -400,8 +462,8 @@ export default function DaftarQurbanPublic() {
                     <h4 className="text-xs font-black text-emerald-700 uppercase tracking-widest mb-4 border-b border-gray-100 pb-2">Hewan Ke-{index+1} ({ani.jenis === '1' ? 'Kambing' : ani.jenis === '3' ? 'Sapi Patungan' : 'Sapi Utuh'})</h4>
                     
                     <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4">
-                      <CustomSelect label="Hadir Melihat?" name={`melihat_${ani.id}`} value={ani.melihat ? "YA" : "TIDAK"} onChange={(val:any)=>updateAnimal(ani.id, 'melihat', val === "YA")} options={[{val:"YA", label:"YA 👀"}, {val:"TIDAK", label:"TIDAK ❌"}]} />
-                      <CustomSelect label="Ikut Menyembelih?" name={`menyembelih_${ani.id}`} value={ani.menyembelih ? "YA" : "TIDAK"} onChange={(val:any)=>updateAnimal(ani.id, 'menyembelih', val === "YA")} options={[{val:"YA", label:"YA 🔪"}, {val:"TIDAK", label:"TIDAK ❌"}]} />
+                      <CustomSelect label="Hadir Melihat?" name={`melihat_${ani.id}`} value={ani.melihat} onChange={(val:any)=>updateAnimal(ani.id, 'melihat', val)} options={[{val:"YA", label:"YA 👀"}, {val:"TIDAK", label:"TIDAK ❌"}]} error={showErrors && !ani.melihat} />
+                      <CustomSelect label="Ikut Menyembelih?" name={`menyembelih_${ani.id}`} value={ani.menyembelih} onChange={(val:any)=>updateAnimal(ani.id, 'menyembelih', val)} options={[{val:"YA", label:"YA 🔪"}, {val:"TIDAK", label:"TIDAK ❌"}]} error={showErrors && !ani.menyembelih} />
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-5">
@@ -410,10 +472,11 @@ export default function DaftarQurbanPublic() {
                         label="Sembelih di Luar MMI?" name={`penyaluran_${ani.id}`} value={ani.penyaluran} 
                         onChange={(val:any)=>updateAnimal(ani.id, 'penyaluran', val)} 
                         options={[{val:"LUAR", label:"YA, BERSEDIA"}, {val:"DALAM", label:"TIDAK (HARUS DI MMI)"}]} 
+                        error={showErrors && !ani.penyaluran}
                       />
                       <div className="space-y-1.5">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Jml Bagian (Bungkus)</label>
-                        <input value={ani.jml_bagian} onChange={(e)=>updateAnimal(ani.id, 'jml_bagian', e.target.value)} type="number" placeholder="1" className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38] transition-all outline-none" />
+                        <input value={ani.jml_bagian} onChange={(e)=>updateAnimal(ani.id, 'jml_bagian', e.target.value)} type="number" placeholder="1" className={`w-full px-4 py-3.5 border rounded-xl text-xs font-bold focus:outline-none transition-all ${showErrors && (!ani.jml_bagian || ani.jml_bagian < 1) ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50 placeholder-red-300 text-red-700' : 'bg-gray-50 border-gray-200 focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38]'}`} />
                       </div>
                     </div>
 
@@ -423,18 +486,20 @@ export default function DaftarQurbanPublic() {
                             label="Permintaan Bagian Daging" name={`opsi_pesan_${ani.id}`} value={ani.opsi_pesan} 
                             onChange={(val:any)=>updateAnimal(ani.id, 'opsi_pesan', val)} 
                             options={[{val:"PASRAH", label:"DISERAHKAN SELURUHNYA KE PANITIA"}, {val:"KHUSUS", label:"ADA PERMINTAAN KHUSUS"}]} 
+                            error={showErrors && !ani.opsi_pesan}
                         />
                         
                         {ani.opsi_pesan === "KHUSUS" && (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 bg-gray-50 p-4 rounded-xl border border-gray-200 animate-in fade-in zoom-in-95">
                                 <div className="space-y-1.5">
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Detail Permintaan</label>
-                                    <textarea value={ani.pesan} onChange={(e)=>updateAnimal(ani.id, 'pesan', e.target.value)} rows={2} placeholder="CTH: MINTA KEPALA SAPI..." className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-xs font-bold resize-none focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38] transition-all outline-none" />
+                                    <textarea value={ani.pesan} onChange={(e)=>updateAnimal(ani.id, 'pesan', e.target.value)} rows={2} placeholder="CTH: MINTA KEPALA SAPI..." className={`w-full px-4 py-3 border rounded-xl text-xs font-bold resize-none focus:outline-none transition-all ${showErrors && !ani.pesan.trim() ? 'border-red-500 ring-2 ring-red-500/20 bg-red-50 placeholder-red-300 text-red-700' : 'bg-white border-gray-200 focus:ring-2 focus:ring-[#115E38]/20 focus:border-[#115E38]'}`} />
                                 </div>
                                 <CustomSelect 
                                     label="Pengambilan Bagian Khusus" name={`pengambilan_pesan_${ani.id}`} value={ani.pengambilan_pesan} 
                                     onChange={(val:any)=>updateAnimal(ani.id, 'pengambilan_pesan', val)} 
                                     options={[{val:"AMBIL", label:"AMBIL SENDIRI KE MMI"}, {val:"DIANTAR", label:"DIANTAR KE ALAMAT"}]} 
+                                    error={showErrors && !ani.pengambilan_pesan}
                                 />
                             </div>
                         )}
@@ -470,10 +535,10 @@ export default function DaftarQurbanPublic() {
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider ml-1">Upload Bukti Transfer</label>
-                  <label className="flex flex-col items-center justify-center w-full h-24 md:h-28 border-2 border-dashed border-emerald-200 rounded-2xl cursor-pointer bg-[#F8FAF9] hover:bg-emerald-50 transition-all group">
+                  <label className={`flex flex-col items-center justify-center w-full h-24 md:h-28 border-2 border-dashed rounded-2xl cursor-pointer transition-all group ${showErrors && !fileBukti ? 'border-red-500 bg-red-50 hover:bg-red-100' : 'border-emerald-200 bg-[#F8FAF9] hover:bg-emerald-50'}`}>
                       <div className="flex flex-col items-center justify-center">
-                          <Camera className="w-6 h-6 md:w-8 md:h-8 text-emerald-200 mb-2 group-hover:text-emerald-500 transition-colors" />
-                          <p className="text-[9px] md:text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                          <Camera className={`w-6 h-6 md:w-8 md:h-8 mb-2 transition-colors ${showErrors && !fileBukti ? 'text-red-400 group-hover:text-red-500' : 'text-emerald-200 group-hover:text-emerald-500'}`} />
+                          <p className={`text-[9px] md:text-[10px] font-black uppercase tracking-widest ${showErrors && !fileBukti ? 'text-red-500' : 'text-gray-400'}`}>
                             {fileBukti ? <span className="text-emerald-600">{fileBukti.name}</span> : <span>Pilih File Gambar</span>}
                           </p>
                       </div>
@@ -512,7 +577,7 @@ export default function DaftarQurbanPublic() {
                         <div className="font-black text-emerald-700 uppercase border-b border-gray-200 pb-1 mb-2">Hewan {i+1}: {a.jenis === '1' ? 'Kambing' : a.jenis === '3' ? 'Sapi Patungan' : 'Sapi Utuh'}</div>
                         <div className="grid grid-cols-2 gap-y-3">
                           <div><span className="text-gray-400 font-bold text-[9px] uppercase block">Bentuk Titipan</span><span className="font-bold text-gray-800">{a.bentuk}</span></div>
-                          <div><span className="text-gray-400 font-bold text-[9px] uppercase block">Hadir & Menyembelih?</span><span className="font-bold text-gray-800">{a.melihat ? 'Ya' : 'Tidak'}, {a.menyembelih ? 'Ya' : 'Tidak'}</span></div>
+                          <div><span className="text-gray-400 font-bold text-[9px] uppercase block">Hadir & Menyembelih?</span><span className="font-bold text-gray-800">{a.melihat === "YA" ? 'Ya' : 'Tidak'}, {a.menyembelih === "YA" ? 'Ya' : 'Tidak'}</span></div>
                           <div><span className="text-gray-400 font-bold text-[9px] uppercase block">Sembelih Luar MMI?</span><span className="font-bold text-gray-800">{a.penyaluran === 'LUAR' ? 'YA' : 'TIDAK'}</span></div>
                           <div><span className="text-gray-400 font-bold text-[9px] uppercase block">Jml Bagian</span><span className="font-bold text-gray-800">{a.jml_bagian} Bungkus</span></div>
                           
@@ -549,10 +614,9 @@ export default function DaftarQurbanPublic() {
               </button>
               
               {step < 5 ? (
-                <button 
+                  <button 
                     onClick={nextStep} 
-                    disabled={step === 1 && !personalData.nama_lengkap}
-                    className="flex-1 md:flex-none px-6 md:px-8 py-3.5 bg-[#115E38] text-white rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest hover:bg-emerald-800 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2 disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
+                    className="flex-1 md:flex-none px-6 md:px-8 py-3.5 bg-[#115E38] text-white rounded-xl font-black text-[9px] md:text-[10px] uppercase tracking-widest hover:bg-emerald-800 transition-all shadow-lg shadow-emerald-900/20 flex items-center justify-center gap-2"
                 >
                   Lanjut <ChevronRight size={14} className="md:w-4 md:h-4"/>
                 </button>

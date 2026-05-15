@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import AosInit from "@/components/AosInit";
 
 // Setting font-nya
 const fontUtama = Plus_Jakarta_Sans({ 
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="id">
       {/* Panggil font-nya di tag body */}
       <body className={`${fontUtama.className} bg-admin-bg text-admin-text antialiased`}>
+        <AosInit />
         {children}
       </body>
     </html>

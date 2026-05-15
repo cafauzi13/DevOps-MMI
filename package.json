@@ -12,6 +12,7 @@
   "dependencies": {
     "@pdf-lib/fontkit": "^1.1.1",
     "@prisma/client": "5.22.0",
+    "aos": "^2.3.4",
     "bcryptjs": "^3.0.3",
     "csv-parser": "^3.2.0",
     "lucide-react": "^1.14.0",
@@ -25,6 +26,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.4",
+    "@types/aos": "^3.0.8",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/qrcode": "^1.5.6",

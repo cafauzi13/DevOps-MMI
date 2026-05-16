@@ -20,10 +20,12 @@ export default function HewanActionButtons({ data }: { data: any }) {
   // 🎯 State 7 Nama Sapi Utuh (Khusus Edit)
   const [namaSapiUtuh, setNamaSapiUtuh] = useState<string[]>([]);
 
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+
   // State Form Edit
   const [hwn, setHwn] = useState({
     bentuk: "UANG", uang: "", penyembelihan: "", melihat: "TIDAK", menyembelih: "TIDAK",
-    jml_bagian: "", pembagian: "", pesan_bagian: "", kel_sapi: "", no_uq: "",
+    jml_bagian: "", pembagian: "", opsi_pesan: "PASRAH", pesan_bagian: "", kel_sapi: "", no_uq: "",
     penyaluran: "DALAM", lokasi: "", keterangan: "", penerima: "", petugas: "", sebab: "",
     biaya_operasional: "", pindah_sapi: "TIDAK", metode_bayar: "TUNAI", status_bayar: "BELUM LUNAS"
   });
@@ -58,6 +60,7 @@ export default function HewanActionButtons({ data }: { data: any }) {
       menyembelih: item.menyembelih ? "YA" : "TIDAK",
       jml_bagian: item.jml_bagian?.toString() || "",
       pembagian: item.pembagian || "",
+      opsi_pesan: item.pesan_bagian ? "KHUSUS" : "PASRAH",
       pesan_bagian: item.pesan_bagian || "",
       kel_sapi: item.kel_sapi || "",
       no_uq: item.no_uq || "",
@@ -156,6 +159,40 @@ export default function HewanActionButtons({ data }: { data: any }) {
   };
 
   const membersList = data.isGroup ? data.members : [data];
+
+  const CustomSelect = ({ label, value, options, name }: any) => {
+    const activeLabel = options.find((opt: any) => opt.val === value)?.label || value;
+    const isDropdownOpen = openDropdown === name;
+
+    return (
+      <div className="space-y-1.5 flex flex-col relative">
+        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{label}</label>
+        <div 
+          onClick={() => setOpenDropdown(isDropdownOpen ? null : name)}
+          className={`w-full px-4 py-3 bg-gray-50 border ${isDropdownOpen ? 'border-emerald-500 ring-2 ring-emerald-500/10' : 'border-gray-200'} rounded-xl flex items-center justify-between cursor-pointer hover:border-emerald-500/50 transition-all`}
+        >
+          <span className="text-sm font-bold text-gray-700 uppercase">{activeLabel}</span>
+          <ChevronDown size={18} className={`text-gray-400 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180 text-emerald-500' : ''}`} />
+        </div>
+        {isDropdownOpen && (
+          <>
+            <div className="fixed inset-0 z-30" onClick={() => setOpenDropdown(null)} />
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-100 rounded-xl shadow-xl overflow-hidden py-1 z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+              {options.map((opt: any) => (
+                <div 
+                  key={opt.val}
+                  onClick={() => { setHwn({...hwn, [name]: opt.val}); setOpenDropdown(null); }}
+                  className={`w-full text-left px-4 py-2.5 text-sm font-bold cursor-pointer transition-colors ${value === opt.val ? 'bg-emerald-50 text-emerald-600' : 'hover:bg-gray-50 text-gray-700'}`}
+                >
+                  {opt.label}
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -346,44 +383,89 @@ export default function HewanActionButtons({ data }: { data: any }) {
               <button onClick={() => setIsEditOpen(false)} className="p-2 bg-gray-100 rounded-full"><X size={22} /></button>
             </div>
 
-            <div className="p-8 space-y-6">
-              {/* Form Status Bayar & Metode */}
-              <div className="bg-white p-6 rounded-2xl border shadow-sm grid grid-cols-2 gap-5">
-                <div className="space-y-1.5 flex flex-col">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Metode Bayar</label>
-                  <select name="metode_bayar" value={hwn.metode_bayar} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm font-bold">
-                    <option value="TUNAI">TUNAI</option><option value="TRANSFER">TRANSFER</option>
-                  </select>
+            <div className="flex-1 p-8 space-y-6">
+              
+              {/* INFORMASI NOMINAL */}
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+                <h4 className="font-black text-mmi text-xs uppercase tracking-widest border-b border-gray-100 pb-3 flex items-center gap-2">
+                  <div className="w-1.5 h-4 bg-mmi rounded-full"></div> Informasi Nominal
+                </h4>
+                <div className="grid grid-cols-2 gap-5">
+                  <CustomSelect label="Bentuk Titipan" name="bentuk" value={hwn.bentuk} options={[{val:"UANG", label:"UANG 💵"}, {val:"HEWAN", label:"HEWAN HIDUP 🥩"}]} />
+                  <div className="space-y-1.5 flex flex-col">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Nominal Uang (Rp)</label>
+                    <input type="number" name="uang" value={hwn.uang} onChange={handleChange} placeholder="0" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold focus:border-emerald-500 outline-none transition-all" />
+                  </div>
                 </div>
-                <div className="space-y-1.5 flex flex-col">
-                  <label className="text-xs font-bold text-gray-500 uppercase">Status Bayar</label>
-                  <select name="status_bayar" value={hwn.status_bayar} onChange={handleChange} className="w-full px-4 py-3 bg-gray-50 border rounded-xl text-sm font-bold">
-                    <option value="LUNAS">LUNAS</option><option value="DP">DP</option><option value="BELUM LUNAS">BELUM LUNAS</option>
-                  </select>
+              </div>
+
+              {/* PEMBAYARAN & ADMINISTRASI */}
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+                <h4 className="font-black text-mmi text-xs uppercase tracking-widest border-b border-gray-100 pb-3 flex items-center gap-2">
+                  <div className="w-1.5 h-4 bg-mmi rounded-full"></div> Pembayaran & Administrasi
+                </h4>
+                <div className="grid grid-cols-2 gap-5">
+                  <CustomSelect label="Metode Bayar" name="metode_bayar" value={hwn.metode_bayar} options={[{val:"TUNAI", label:"TUNAI 💵"}, {val:"TRANSFER", label:"TRANSFER 💳"}]} />
+                  <CustomSelect label="Status Bayar" name="status_bayar" value={hwn.status_bayar} options={[{val:"LUNAS", label:"LUNAS ✅"}, {val:"DP", label:"DP 💰"}, {val:"BELUM LUNAS", label:"BELUM LUNAS ❌"}]} />
+                </div>
+              </div>
+
+              {/* TEKNIS LAPANGAN & DISTRIBUSI */}
+              <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm space-y-6">
+                <h4 className="font-black text-mmi text-xs uppercase tracking-widest border-b border-gray-100 pb-3 flex items-center gap-2">
+                  <div className="w-1.5 h-4 bg-mmi rounded-full"></div> Teknis Lapangan & Distribusi
+                </h4>
+                <div className="grid grid-cols-2 gap-5 mb-2">
+                  <CustomSelect label="Hadir Melihat?" name="melihat" value={hwn.melihat} options={[{val:"YA", label:"YA 👀"}, {val:"TIDAK", label:"TIDAK ❌"}]} />
+                  <CustomSelect label="Ikut Menyembelih?" name="menyembelih" value={hwn.menyembelih} options={[{val:"YA", label:"YA 🔪"}, {val:"TIDAK", label:"TIDAK ❌"}]} />
+                  <CustomSelect label="Sembelih di Luar MMI?" name="penyaluran" value={hwn.penyaluran} options={[{val:"LUAR", label:"YA, BERSEDIA 🌍"}, {val:"DALAM", label:"TIDAK (HARUS DI MMI) 🏢"}]} />
+                  <div className="space-y-1.5 flex flex-col">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jml Bagian (Bungkus)</label>
+                    <input type="number" name="jml_bagian" value={hwn.jml_bagian} onChange={handleChange} placeholder="1" className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm font-bold outline-none focus:border-emerald-500 transition-all" />
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-100 pt-5">
+                    <CustomSelect 
+                        label="Permintaan Bagian Daging" name="opsi_pesan" value={hwn.opsi_pesan} 
+                        options={[{val:"PASRAH", label:"DISERAHKAN KE PANITIA"}, {val:"KHUSUS", label:"ADA PERMINTAAN KHUSUS"}]} 
+                    />
+                    
+                    {hwn.opsi_pesan === "KHUSUS" && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4 bg-gray-50 p-5 rounded-2xl border border-gray-200 animate-in zoom-in-95">
+                            <div className="space-y-1.5 flex flex-col col-span-1 md:col-span-2">
+                                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Detail Permintaan</label>
+                                <textarea name="pesan_bagian" rows={2} value={hwn.pesan_bagian} onChange={handleChange} placeholder="CTH: MINTA KEPALA SAPI..." className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-bold uppercase resize-none outline-none focus:border-emerald-500 transition-all" />
+                            </div>
+                        </div>
+                    )}
                 </div>
               </div>
 
               {/* Form 7 Nama (Sapi Utuh Khusus) */}
               {selectedMember.jenis_qurban === "2" && (
-                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 shadow-sm space-y-4">
-                  <h4 className="font-bold text-purple-800 flex items-center gap-2"><Info size={16}/> Edit 7 Nama Sapi Utuh</h4>
+                <div className="bg-purple-50 p-6 rounded-2xl border border-purple-100 shadow-sm space-y-4 animate-in zoom-in-95">
+                  <h4 className="font-black text-purple-800 text-xs uppercase tracking-widest border-b border-purple-100 pb-3 flex items-center gap-2">
+                    <Info size={14}/> Edit 7 Nama Sapi Utuh
+                  </h4>
                   <div className="grid grid-cols-2 gap-3">
                     {namaSapiUtuh.map((nama, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <span className="w-6 h-6 rounded-full bg-purple-200 text-purple-700 text-xs font-bold flex items-center justify-center shrink-0">{idx + 1}</span>
-                        <input type="text" value={nama} onChange={(e) => handleNamaSapiChange(idx, e.target.value)} placeholder={`Nama ke-${idx + 1}`} className="w-full px-3 py-2 bg-white border border-purple-100 rounded-lg text-sm" />
+                        <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 text-[10px] font-black flex items-center justify-center shrink-0">{idx + 1}</span>
+                        <input type="text" value={nama} onChange={(e) => handleNamaSapiChange(idx, e.target.value)} placeholder={`NAMA ${idx + 1}...`} className="w-full px-3 py-2 bg-white border border-purple-100 rounded-lg text-xs font-bold uppercase outline-none focus:border-purple-400" />
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* Tombol Update */}
-              <div className="flex justify-end pt-4">
-                <button onClick={executeUpdate} disabled={isSubmitting} className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold">
-                  {isSubmitting ? "Menyimpan..." : "Update Data"}
-                </button>
-              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 bg-white flex justify-end gap-3 shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.05)] sticky bottom-0 z-50">
+              <button onClick={() => setIsEditOpen(false)} className="px-6 py-3 rounded-xl font-black text-xs uppercase tracking-widest text-gray-500 hover:bg-gray-100 transition-all border border-gray-100">Batal</button>
+              <button onClick={executeUpdate} disabled={isSubmitting} className={`px-8 py-3 rounded-xl font-black text-xs uppercase tracking-widest flex items-center gap-2 transition-all text-white shadow-lg ${isSubmitting ? "bg-mmi/70 cursor-not-allowed" : "bg-mmi hover:bg-mmi-hover shadow-mmi/30"}`}>
+                {isSubmitting ? <><Loader2 size={16} className="animate-spin" /> Sedang Proses...</> : <><Save size={16} /> Update Data</>}
+              </button>
             </div>
           </div>
         </>

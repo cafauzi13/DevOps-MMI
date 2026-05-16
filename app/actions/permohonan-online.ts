@@ -142,26 +142,49 @@ export async function verifyPermohonan(id_permohonan: string, action: "ACC" | "D
       
       for (const hwn of daftarHewan) {
         const kodeHewan = hwn.jenis; 
-        const prefixId = `${hijriYear}${kodeHewan}`;
+        const isSapi = kodeHewan === "2" || kodeHewan === "3";
+        const mapKey = isSapi ? "SAPI" : kodeHewan;
 
-        if (urutanMap[prefixId] === undefined) {
-          const lastHewan = await tx.hewanQurban.findFirst({
-            where: { no_id_lama: { startsWith: prefixId } },
-            orderBy: { no_id_lama: 'desc' }
-          });
-          
-          let urutanHewan = 1;
-          if (lastHewan && lastHewan.no_id_lama) {
-            const lastUrutanStr = lastHewan.no_id_lama.substring(prefixId.length);
-            const lastUrutan = parseInt(lastUrutanStr);
-            if (!isNaN(lastUrutan)) urutanHewan = lastUrutan + 1;
+        if (urutanMap[mapKey] === undefined) {
+          if (isSapi) {
+            const hewanSapi = await tx.hewanQurban.findMany({
+              where: {
+                OR: [
+                  { no_id_lama: { startsWith: `${hijriYear}2` } },
+                  { no_id_lama: { startsWith: `${hijriYear}3` } }
+                ]
+              },
+              select: { no_id_lama: true }
+            });
+            let maxSeq = 0;
+            hewanSapi.forEach(h => {
+              if (h.no_id_lama && h.no_id_lama.length >= 6) {
+                const seq = parseInt(h.no_id_lama.substring(5));
+                if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+              }
+            });
+            urutanMap[mapKey] = maxSeq + 1;
+          } else {
+            const prefixId = `${hijriYear}${kodeHewan}`;
+            const lastHewan = await tx.hewanQurban.findFirst({
+              where: { no_id_lama: { startsWith: prefixId } },
+              orderBy: { no_id_lama: 'desc' }
+            });
+            
+            let urutanHewan = 1;
+            if (lastHewan && lastHewan.no_id_lama && lastHewan.no_id_lama.length >= 6) {
+              const lastUrutanStr = lastHewan.no_id_lama.substring(5);
+              const lastUrutan = parseInt(lastUrutanStr);
+              if (!isNaN(lastUrutan)) urutanHewan = lastUrutan + 1;
+            }
+            urutanMap[mapKey] = urutanHewan;
           }
-          urutanMap[prefixId] = urutanHewan;
         } else {
-          urutanMap[prefixId]++;
+          urutanMap[mapKey]++;
         }
 
-        const newIdHewan = `${prefixId}${urutanMap[prefixId].toString().padStart(3, '0')}`;
+        const prefixId = `${hijriYear}${kodeHewan}`;
+        const newIdHewan = `${prefixId}${urutanMap[mapKey].toString().padStart(3, '0')}`;
 
         // ✨ PENENTUAN NASIB KELOMPOK SAPI (Cari slot kosong dari nomor 1) ✨
         let finalKelSapi = null;

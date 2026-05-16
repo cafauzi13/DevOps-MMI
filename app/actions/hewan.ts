@@ -14,19 +14,41 @@ export async function createHewan(formData: any) {
     const hijriYear = getActiveHijriYear();
     const kodeHewan = formData.jenis_qurban; 
 
-    const lastHewan = await prisma.hewanQurban.findFirst({
-      where: {
-        no_id_lama: { startsWith: `${hijriYear}${kodeHewan}` }
-      },
-      orderBy: { no_id_lama: 'desc' }
-    });
-
     let nextSeq = 1;
-    if (lastHewan && lastHewan.no_id_lama) {
-      const lastSeqStr = lastHewan.no_id_lama.slice(-4); 
-      nextSeq = parseInt(lastSeqStr) + 1;
+
+    if (kodeHewan === "2" || kodeHewan === "3") {
+      const hewanSapi = await prisma.hewanQurban.findMany({
+        where: {
+          OR: [
+            { no_id_lama: { startsWith: `${hijriYear}2` } },
+            { no_id_lama: { startsWith: `${hijriYear}3` } }
+          ]
+        },
+        select: { no_id_lama: true }
+      });
+      let maxSeq = 0;
+      hewanSapi.forEach(h => {
+        if (h.no_id_lama && h.no_id_lama.length >= 6) {
+          const seq = parseInt(h.no_id_lama.substring(5));
+          if (!isNaN(seq) && seq > maxSeq) maxSeq = seq;
+        }
+      });
+      nextSeq = maxSeq + 1;
+    } else {
+      const lastHewan = await prisma.hewanQurban.findFirst({
+        where: {
+          no_id_lama: { startsWith: `${hijriYear}${kodeHewan}` }
+        },
+        orderBy: { no_id_lama: 'desc' }
+      });
+
+      if (lastHewan && lastHewan.no_id_lama && lastHewan.no_id_lama.length >= 6) {
+        const lastSeqStr = lastHewan.no_id_lama.substring(5); 
+        nextSeq = parseInt(lastSeqStr) + 1;
+      }
     }
-    const seqString = nextSeq.toString().padStart(4, '0'); 
+
+    const seqString = nextSeq.toString().padStart(3, '0'); 
     const generatedNoIdLama = `${hijriYear}${kodeHewan}${seqString}`;
 
     // 💾 1. SIMPAN DATA HEWAN KE DATABASE

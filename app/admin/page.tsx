@@ -18,16 +18,19 @@ async function DashboardDataList({ year }: { year: string }) {
   const totalPengqurban = pengqurbans.length;
   
   const sapiUtuh = hewans.filter(h => 
-    h.jenis_qurban === "2" || h.jenis_qurban.toLowerCase() === "sapi"
+    h.jenis_qurban === "2" || h.jenis_qurban?.toLowerCase() === "sapi"
   ).length;
   
-  const orangPatungan = hewans.filter(h => h.jenis_qurban === "3").length;
+  const orangPatungan = hewans
+    .filter(h => h.jenis_qurban === "3")
+    .reduce((sum, h) => sum + (h.members?.length || 1), 0);
+
   const sapiDariPatungan = Math.floor(orangPatungan / 7);
   const sisaOrangPatungan = orangPatungan % 7; 
   const totalSapi = sapiUtuh + sapiDariPatungan;
   
   const totalKambing = hewans.filter(h => 
-    h.jenis_qurban === "1" || h.jenis_qurban.toLowerCase() === "kambing"
+    h.jenis_qurban === "1" || h.jenis_qurban?.toLowerCase() === "kambing"
   ).length;
 
   const recentPengqurban = pengqurbans.slice(0, 5);
@@ -57,11 +60,15 @@ async function DashboardDataList({ year }: { year: string }) {
             <h3 className="text-3xl font-extrabold text-admin-text">
               {totalSapi} <span className="text-sm font-medium text-gray-400">Ekor</span>
             </h3>
-            {sisaOrangPatungan > 0 && (
+            {sisaOrangPatungan > 0 ? (
               <p className="text-[11px] text-orange-500 font-bold mt-1 bg-orange-50 inline-block px-2 py-0.5 rounded">
                 + {sisaOrangPatungan} orang (belum genap)
               </p>
-            )}
+            ) : totalSapi > 0 ? (
+              <p className="text-[11px] text-emerald-600 font-bold mt-1 bg-emerald-50 inline-block px-2 py-0.5 rounded">
+                Semua kelompok genap ✨
+              </p>
+            ) : null}
           </div>
         </div>
 

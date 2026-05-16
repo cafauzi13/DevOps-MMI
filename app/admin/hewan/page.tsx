@@ -40,9 +40,16 @@ async function HewanTableList({ query, year }: { query: string; year: string }) 
                   <td className="px-6 py-4">{index + 1}</td>
                   
                   <td className="px-6 py-4 align-middle">
-                    <span className="font-mono text-xs text-emerald-600 bg-emerald-50 rounded-md px-2 py-1 border border-emerald-100 inline-block">
-                      {item.no_id_lama || "-"}
-                    </span>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-sm text-gray-800">
+                        {item.jenis_qurban === "1" || item.jenis_qurban?.toLowerCase() === "kambing" 
+                          ? `KAMBING ${item.no_id_lama && !isNaN(parseInt(item.no_id_lama.substring(5))) ? parseInt(item.no_id_lama.substring(5)) : "-"}` 
+                          : `KELOMPOK ${item.kel_sapi || "-"}`}
+                      </span>
+                      <span className="font-mono text-xs text-gray-400 mt-0.5">
+                        {item.no_id_lama || "-"}
+                      </span>
+                    </div>
                   </td>
 
                   <td className="px-6 py-4">
@@ -77,10 +84,41 @@ async function HewanTableList({ query, year }: { query: string; year: string }) 
                           ))}
                         </ul>
                       </div>
+                    ) : item.jenis_qurban === "2" || item.jenis_qurban?.toLowerCase() === "sapi" ? (
+                      <div className="flex flex-col gap-1.5 py-1">
+                        {(() => {
+                          let names: string[] = [];
+                          try {
+                            names = JSON.parse(item.nama_shohibul_sapi || "[]");
+                          } catch(e) {}
+                          const firstName = names.length > 0 ? names[0] : (item.pengqurban?.nama_lengkap || "Tanpa Nama");
+                          return (
+                            <>
+                              <span 
+                                className="font-bold text-sm px-3 py-1 rounded-md w-fit border bg-emerald-100 text-emerald-800 border-emerald-200"
+                              >
+                                Sapi Utuh: Keluarga {firstName} ✨
+                              </span>
+                              <ul className="text-xs text-gray-600 space-y-1 pl-1 mt-1">
+                                {names.length > 0 ? names.map((name: string, i: number) => (
+                                  <li key={i} className="flex items-start gap-1.5">
+                                    <span className="font-medium text-gray-400">{i + 1}.</span> 
+                                    <span className="font-bold truncate max-w-[220px]">{name}</span>
+                                  </li>
+                                )) : (
+                                  <li className="flex items-start gap-1.5">
+                                    <span className="font-medium text-gray-400">1.</span> 
+                                    <span className="font-bold truncate max-w-[220px]">{item.pengqurban?.nama_lengkap || "Tanpa Nama"}</span>
+                                  </li>
+                                )}
+                              </ul>
+                            </>
+                          );
+                        })()}
+                      </div>
                     ) : (
                       <div className="font-bold truncate max-w-[250px]">
                         {item.pengqurban?.nama_lengkap || "Tanpa Nama"}
-                        {item.kel_sapi && <span className="ml-2 text-[10px] bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full uppercase">{item.kel_sapi}</span>}
                       </div>
                     )}
                   </td>

@@ -1,0 +1,31 @@
+name: CI Pipeline
+
+on:
+  pull_request:
+    branches: [ "develop", "main" ] # Akan menyala setiap ada PR ke develop atau main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Tarik Kode dari Repository
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js v20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install Dependencies
+      run: npm ci
+
+    - name: Generate Prisma Client (Wajib buat database)
+      run: npx prisma generate
+
+    - name: Pengecekan Standar Kode (Linter)
+      run: npm run lint
+
+    - name: Jalankan Unit Test (Menunggu Orang 2)
+      run: npm run test

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/jest-globals'; 
 import '@testing-library/jest-dom';
 
 // tiruan komponen agar tes fokus mengecek UI teks LUNAS dan DISEMBELIH

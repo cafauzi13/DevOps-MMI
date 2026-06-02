@@ -12,7 +12,7 @@ jobs:
     - name: Tarik Kode dari Repository
       uses: actions/checkout@v4
 
-    - name: Setup Node.js v20
+    - name: Setup Node.js v22
       uses: actions/setup-node@v4
       with:
         node-version: '22'

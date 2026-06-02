@@ -80,7 +80,7 @@ export default function PublicTrackingPage() {
         {/* Banner header logo */}
         <div className="text-center mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex justify-center mb-4">
-            <Image src="/logo-mmi-hijau.png" alt="Logo MMI" width={64} height={64} className="drop-shadow-md" onError={(e) => {
+            <Image src="/logo-mmi.png" alt="Logo MMI" width={64} height={64} className="drop-shadow-md" onError={(e) => {
               // Fallback jika logo hijau tidak ada
               (e.target as HTMLElement).style.display = "none";
             }} />

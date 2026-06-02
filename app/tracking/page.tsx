@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Loader2, Calendar, CheckCircle2, Award, Truck } from "lucide-react";
+import { Search, Loader2, Calendar, Award, Truck } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -28,7 +28,7 @@ export default function PublicTrackingPage() {
       } else {
         setError(resData.message || "Data pelacakan qurban tidak ditemukan.");
       }
-    } catch (err) {
+    } catch {
       setError("Gagal menghubungi server. Silakan coba beberapa saat lagi.");
     } finally {
       setLoading(false);
@@ -200,7 +200,7 @@ export default function PublicTrackingPage() {
                       </div>
                       <div className="flex flex-col md:items-center">
                         <h4 className="font-extrabold text-gray-800 text-xs uppercase tracking-wide">Penyembelihan</h4>
-                        <p className="text-[10px] text-gray-400 font-bold mt-0.5 leading-normal">Penyembelihan syar'i oleh jagal resmi MMI di area jagal.</p>
+                        <p className="text-[10px] text-gray-400 font-bold mt-0.5 leading-normal">Penyembelihan syar&apos;i oleh jagal resmi MMI di area jagal.</p>
                       </div>
                     </div>
 

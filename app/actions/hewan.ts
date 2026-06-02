@@ -52,7 +52,7 @@ export async function createHewan(formData: any) {
     const generatedNoIdLama = `${hijriYear}${kodeHewan}${seqString}`;
 
     // 💾 1. SIMPAN DATA HEWAN KE DATABASE
-    const newHewan = await prisma.hewanQurban.create({
+    await prisma.hewanQurban.create({
       data: {
         no_id_lama: generatedNoIdLama,
         nkw_pengqurban: formData.nkw_pengqurban,

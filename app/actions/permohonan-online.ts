@@ -1,14 +1,14 @@
 "use server";
 
 import { PrismaClient } from "@prisma/client";
-import { getActiveHijriYear } from "@/app/lib/hijri";
+
 
 const prisma = new PrismaClient();
 
 export async function submitPermohonanOnline(payload: any) {
   try {
     // Kita simpan ke "Kamar Tunggu" (tabel permohonan_online)
-    const permohonan = await prisma.permohonanOnline.create({
+    await prisma.permohonanOnline.create({
       data: {
         nama_lengkap: payload.nama_lengkap,
         telepon: payload.telepon,

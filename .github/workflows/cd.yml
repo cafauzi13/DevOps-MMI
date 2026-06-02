@@ -30,6 +30,6 @@ jobs:
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'qurban-mmi'
-        slot-name: 'staging'
+        slot-name: 'qurban-mmi-staging'
         publish-profile: ${{ secrets.AZURE_CREDENTIALS }}
         images: '${{ secrets.ACR_LOGIN_SERVER }}/qurban-mmi:latest'

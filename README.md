@@ -225,9 +225,12 @@ Selama fase orkestrasi infrastruktur *cloud*, terdapat resolusi masalah krusial 
 
 ## 👥 Tim Pengembang
 
-Sistem Informasi Administrasi Qurban MMI dirancang dan dioptimalkan oleh:
+Sistem Informasi Administrasi Qurban MMI dirancang dan dioptimalkan oleh **Kelompok 5 PSO C (Sistem Informasi ITS)**:
 
-* **Kelompok 5 PSO C - Bara Ardiwinata & Tim (Sistem Informasi ITS)**
+* **Muhammad Raihan Hassan** (NRP. 5026231108)
+* **Annisa Nur Fauzi** (NRP. 5026231228)
+* **Lailatul Fitaliqoh** (NRP. 5026231229)
+* **Bara Ardiwinata** (NRP. 5026231232)
 
 ---
 

@@ -220,9 +220,9 @@ export async function verifyPermohonan(id_permohonan: string, action: "ACC" | "D
             status_bayar: "BELUM LUNAS",
             bukti_bayar: permohonan.bukti_bayar,
             
-            melihat: hwn.melihat,
-            menyembelih: hwn.menyembelih,
-            pindah_sapi: hwn.pindah_sapi,
+            melihat: hwn.melihat === "YA" || hwn.melihat === true,
+            menyembelih: hwn.menyembelih === "YA" || hwn.menyembelih === true,
+            pindah_sapi: hwn.pindah_sapi === "YA" || hwn.pindah_sapi === true,
             
             penyaluran: hwn.penyaluran,
             penyaluran_luar: hwn.penyaluran === "LUAR",

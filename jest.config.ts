@@ -13,6 +13,17 @@ const config: Config = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
   },
+  collectCoverageFrom: [
+    'app/actions/hewan.ts',
+    'app/actions/pengqurban.ts',
+    'app/actions/permohonan-online.ts',
+    'app/actions/petugas.ts',
+    'app/api/track/route.ts',
+    'app/utils/tracking.ts',
+  ],
+  coveragePathIgnorePatterns: [
+    '<rootDir>/app/lib/',
+  ],
 }
 
 export default createJestConfig(config)

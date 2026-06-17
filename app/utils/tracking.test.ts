@@ -23,6 +23,11 @@ describe("Tracking UI Utility Helpers", () => {
       expect(getStepStatus("", "MENUNGGU")).toBe("completed");
       expect(getStepStatus("", "DISEMBELIH")).toBe("active");
     });
+
+    it("should handle invalid/unrecognized status (e.g. KABUR) and default to MENUNGGU index", () => {
+      expect(getStepStatus("KABUR", "MENUNGGU")).toBe("completed");
+      expect(getStepStatus("KABUR", "DISEMBELIH")).toBe("active");
+    });
   });
 
   describe("getStepperColorClass", () => {

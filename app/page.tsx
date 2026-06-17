@@ -54,12 +54,6 @@ export default function Home() {
                   <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
               </div>
-              <Link
-                href="/tracking"
-                className="text-emerald-200 hover:text-amber-400 font-medium text-sm transition-colors mt-2"
-              >
-                Sudah mendaftar qurban? Lacak hewan Anda di sini →
-              </Link>
             </div>
           </div>
         </section>

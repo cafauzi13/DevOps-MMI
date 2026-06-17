@@ -29,6 +29,15 @@ jest.mock("@/app/lib/hijri", () => ({
   getActiveHijriYear: jest.fn(() => "1447"),
 }));
 
+jest.mock("next-auth", () => ({
+  getServerSession: jest.fn(() => Promise.resolve({
+    user: {
+      name: "Admin Tester",
+      role: "ADMIN"
+    }
+  })),
+}));
+
 const prismaMock = new PrismaClient() as any;
 
 describe("Hewan Server Actions", () => {

@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Tarik Kode dari Repository
+    - name: Checkout source code
       uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
+    - name: Setup Docker Buildx
       uses: docker/setup-buildx-action@v3
 
     - name: Login ke Azure Container Registry (ACR)
@@ -27,7 +27,7 @@ jobs:
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
 
-    - name: Build dan Push Docker Image
+    - name: Build dan push Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -38,7 +38,7 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Deploy ke Azure App Service (Staging Slot)
+    - name: Deploy ke Azure Staging Slot
       if: (github.base_ref || github.ref_name) == 'develop'
       uses: azure/webapps-deploy@v2
       with:
@@ -47,7 +47,7 @@ jobs:
         publish-profile: ${{ secrets.AZURE_CREDENTIALS }}
         images: '${{ secrets.ACR_LOGIN_SERVER }}/qurban-mmi:${{ github.sha }}'
 
-    - name: Deploy ke Azure App Service (Production Slot)
+    - name: Deploy ke Azure Production Slot
       if: (github.base_ref || github.ref_name) == 'main'
       uses: azure/webapps-deploy@v2
       with:

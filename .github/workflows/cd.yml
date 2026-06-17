@@ -44,7 +44,7 @@ jobs:
       with:
         app-name: 'qurban-mmi' 
         slot-name: 'staging'
-        publish-profile: ${{ secrets.AZURE_CREDENTIALS }}
+        publish-profile: ${{ secrets.AZURE_STAGING_CREDENTIALS }}
         images: '${{ secrets.ACR_LOGIN_SERVER }}/qurban-mmi:${{ github.sha }}'
 
     - name: Deploy ke Azure Production Slot
@@ -52,5 +52,6 @@ jobs:
       uses: azure/webapps-deploy@v2
       with:
         app-name: 'qurban-mmi'
-        publish-profile: ${{ secrets.AZURE_CREDENTIALS }}
+        publish-profile: ${{ secrets.AZURE_PROD_CREDENTIALS }}
         images: '${{ secrets.ACR_LOGIN_SERVER }}/qurban-mmi:${{ github.sha }}'
+

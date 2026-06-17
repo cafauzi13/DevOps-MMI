@@ -223,9 +223,8 @@ export async function verifyPermohonan(id_permohonan: string, action: "ACC" | "D
             melihat: hwn.melihat === "YA" || hwn.melihat === true,
             menyembelih: hwn.menyembelih === "YA" || hwn.menyembelih === true,
             pindah_sapi: hwn.pindah_sapi === "YA" || hwn.pindah_sapi === true,
-            
             penyaluran: hwn.penyaluran,
-            penyaluran_luar: hwn.penyaluran === "LUAR",
+            penyaluran_luar: hwn.penyaluran_luar === "YA" || hwn.penyaluran_luar === true || hwn.penyaluran === "LUAR",
             jml_bagian: parseInt(hwn.jml_bagian) || 1,
             
             opsi_pesan: hwn.opsi_pesan,

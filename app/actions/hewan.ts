@@ -3,6 +3,7 @@
 import { PrismaClient } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { getActiveHijriYear } from "@/app/lib/hijri";
+import { getServerSession } from "next-auth";
 
 const prisma = new PrismaClient();
 
@@ -148,6 +149,16 @@ export async function createHewan(formData: any) {
 // ==========================================
 export async function updateHewan(id_hewan: string, formData: any) {
   try {
+    const session = await getServerSession();
+    if (!session || !session.user || (session.user as any).role !== "ADMIN") {
+      return { success: false, message: "Akses ditolak: Anda harus login sebagai Admin." };
+    }
+
+    const validStatuses = ["MENUNGGU", "DISEMBELIH", "DIDISTRIBUSIKAN"];
+    if (formData.status_hewan && !validStatuses.includes(formData.status_hewan)) {
+      return { success: false, message: "Status hewan tidak valid." };
+    }
+
     await prisma.hewanQurban.update({
       where: { id_hewan },
       data: {

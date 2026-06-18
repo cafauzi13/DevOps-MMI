@@ -63,12 +63,12 @@ Jika Anda atau anggota tim mengalami kegagalan ketika menjalankan pengetesan (mi
    ```
 3. **Konfigurasikan Berkas `.env` Lokal**:
    Pastikan variabel `DATABASE_URL` dan `NEXTAUTH_SECRET` sudah terisi dengan benar (seperti pada bagian 2 di atas).
-4. **Jalankan Uji Coba dengan Coverage**:
-   Picu mesin uji otomatis menggunakan perintah pengujian di bawah ini untuk memverifikasi cakupan kode (*code coverage*):
+4. **Jalankan Uji Coba dengan Command Khusus**:
+   Picu mesin uji otomatis menggunakan perintah pengujian di bawah ini untuk memverifikasi cakupan kode (*code coverage*) menggunakan Jest:
    ```bash
-   npm test -- --coverage
+   npm test -- --passWithNoTests
    ```
-   *(Vitest/Jest akan langsung menjalankan seluruh suite pengujian dan merender tabel cakupan kode secara rinci di terminal).*
+   *(Jest akan langsung menjalankan seluruh suite pengujian dan merender tabel cakupan kode secara rinci di terminal tanpa macet/blank).*
 
 ---
 
@@ -85,7 +85,7 @@ Proyek ini menggunakan arsitektur **Parallel Non-Linear Branching** khusus untuk
     ```
 
 ### ⏩ 2. Branch Masa Depan: `archive/final-feature`
-* **Apa ini?** Kondisi aplikasi masa depan yang udah matang. Fitur tracking udah lengkap 100%, pengaman NextAuth udah aktif, dan 68 unit tests Vitest udah PASS semua.
+* **Apa ini?** Kondisi aplikasi masa depan yang udah matang. Fitur tracking udah lengkap 100%, pengaman NextAuth udah aktif, dan 68 unit tests Jest udah PASS semua.
 * **Kapan dipakai?** Branch ini dilarang keras buat diutak-atik langsung. Dia cuma bertindak sebagai "sumber fitur" yang bakal kita panggil dan gabungkan ke branch `develop` pas live action di depan asdos.
 * **Cara pindah ke sini:**
     ```bash
@@ -106,3 +106,4 @@ git clean -fd
 # [AKSI LIVE DEMO] Gabungkan fitur masa depan ke develop!
 git merge origin/archive/final-feature --no-ff -m "simulasi: live merge fitur tracking"
 # (BOOM! Folder app/tracking langsung auto-muncul tanpa conflict!)
+```

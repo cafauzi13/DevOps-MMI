@@ -85,7 +85,7 @@ Sistem mengimplementasikan arsitektur *two-tier* modern yang dirancang untuk pen
                    ▼  [Server Actions & API Routes]
 ┌──────────────────────────────────────┐
 │       Azure Web App Service          │
-│     (Docker node:20-slim Host)       │
+│     (Docker node:24-slim Host)       │
 └──────────────────────────────────────┘
                    │
                    ▼  [Prisma ORM via Pooler]
@@ -125,7 +125,7 @@ flowchart TD
         
         subgraph CD [Tahap Continuous Deployment]
             CI4 -->|Lolos Uji CI| CD1[Eksekusi npx prisma db push]
-            CD1 --> CD2[Docker Build: node:20-slim]
+            CD1 --> CD2[Docker Build: node:24-slim]
             CD2 --> CD3[Azure Container Registry ACR]
         end
     end
@@ -150,7 +150,7 @@ Ikuti prosedur komprehensif berikut untuk menjalankan *codebase* secara lokal:
 
 Pastikan perangkat lunak berikut telah terinstalasi:
 
-* [Node.js](https://nodejs.org/) (Versi `v20.x` direkomendasikan)
+* [Node.js](https://nodejs.org/) (Versi `v24.x` direkomendasikan)
 * [Git](https://git-scm.com/)
 * PostgreSQL Database Instance (Lokal atau Cloud/Supabase)
 
@@ -217,9 +217,12 @@ Akses **[http://localhost:3000](https://www.google.com/search?q=http://localhost
 
 Selama fase orkestrasi infrastruktur *cloud*, terdapat resolusi masalah krusial yang dicatat sebagai pembelajaran teknis (*Lessons Learned*):
 
-1. **Kompatibilitas Prisma dengan Alpine Linux**: Mengatasi kegagalan pustaka *native* (`libssl.so.1.1`) dengan melakukan migrasi *base image* `Dockerfile` dari `node:20-alpine` menjadi lingkungan berbasis Debian (`node:20-slim`).
+1. **Kompatibilitas Prisma dengan Alpine Linux**: Mengatasi kegagalan pustaka *native* (`libssl.so.1.1`) dengan melakukan migrasi *base image* `Dockerfile` dari `node:20-alpine` menjadi lingkungan berbasis Debian (`node:24-slim`).
 2. **Penanganan Silent Error Otentikasi**: Menyelesaikan indikasi respons `401 Unauthorized` pada *environment cloud* dengan merefaktorisasi fungsi `authorize` NextAuth. Penambahan blok `try-catch` secara eksplisit memastikan setiap eksepsi basis data tercetak valid pada log infrastruktur Azure.
 3. **Bypass Restriksi Advisory Lock**: Menyelesaikan *Timeout Error (P1002)* akibat *Connection Pooler* pada Supabase dengan menjalankan sinkronisasi mandiri (`npx prisma db push --force-reset`) saat mengeksekusi tahapan *seeding* di *Staging Slot*.
+4. **Penyembuhan Cross-Firing Webhook ACR**: Mematikan Continuous Deployment otomatis di Azure Portal dan mengonfigurasi dynamic branch-based tagging di GitHub Actions untuk mengisolasi server Production dari kebocoran push develop.
+5. **Resolusi Port Mismatch & Port Mapping**: Menyuntikkan variabel `WEBSITES_PORT = 3000` pada App Settings Azure demi menyelaraskan port internal kontainer Next.js dengan router cloud Azure.
+6. **Resolusi ImagePullUnauthorizedFailure via Kredensial Manual**: Mengatasi penolakan pull image pada kluster Production akibat masalah sinkronisasi RBAC dengan cara menyuntikkan variabel otentikasi registri private (`DOCKER_REGISTRY_SERVER_*`) secara manual menggunakan token gembok admin ACR.
 
 ---
 

@@ -91,15 +91,114 @@ Biar asdos terpesona dengan demo penggabungan fitur kita, kita bikin topologi Gi
 | `app/utils/tracking.ts` | 100.00% | 100.00% | 100.00% | 100.00% |
 
 ### Daftar Riil Unit Test Tingkat Inti (68 Tests)
-*   **Suite 1: hewan.test.ts** (12 tests) - Pengujian ketersediaan, penambahan, dan validasi status hewan qurban.
-*   **Suite 2: pengqurban.test.ts** (10 tests) - Uji pendaftaran, kelompok patungan sapi, dan relasi data pequrban.
-*   **Suite 3: permohonan.test.ts** (10 tests) - Validasi input permohonan dan pencocokan wilayah shohibul.
-*   **Suite 4: petugas.test.ts** (10 tests) - Uji manajemen petugas jaga dan pencatatan setoran operasional.
-*   **Suite 5: security.test.ts / auth** (5 tests) - Pengujian NextAuth role-based restriction untuk memblokir non-admin.
-*   **Suite 6: tracking-api** (7 tests) - Validasi input HTTP 400/404, data masking nomor telepon shohibul, dan filter kebocoran data sensitif panitia.
-*   **Suite 7: tracking-utils** (5 tests) - Validasi penentu kelas warna langkah stepper dan status pembayaran.
-*   **Suite 8: tracking-page** (5 tests) - Render antarmuka stepper pelacakan status dinamis berbasis data response API.
-*   **Suite 9: integration** (4 tests) - Uji integrasi end-to-end penarikan data dari database PostgreSQL hingga masking di UI.
+
+Berikut adalah rincian utuh dan granular dari **9 Test Suites** dan **68 Test Cases** riil menggunakan framework **Jest**:
+
+#### 1. `app/actions/hewan.test.ts` (Suite: `Hewan Server Actions` - 14 Tests)
+*   **createHewan**
+    *   `should successfully create a new sheep and generate receipt if payment is set`: Menguji pendaftaran kambing dengan uang yang secara otomatis membuat kuitansi taktis baru dan memicu revalidatePath.
+    *   `should increment kambing sequence ID based on existing lastHewan`: Menguji kenaikan urutan angka ID kambing berdasar pendaftar terakhir (misal dari `14471002` ke `14471003`).
+    *   `should calculate next sequence for sapi utuh correctly from existing sapi`: Memastikan nomor urutan kelompok sapi utuh dihitung secara benar dari database.
+    *   `should catch kuitansi creation error and still return success true for animal creation`: Memastikan jika terjadi error di pembuatan kuitansi, proses registrasi hewan qurban utama tetap berjalan sukses.
+    *   `should return success false on database error`: Menguji respon penanganan error ketika Prisma database mengalami kegagalan/koneksi terputus.
+*   **updateHewan**
+    *   `should update animal details successfully`: Memverifikasi pembaruan data detail hewan qurban (misalnya perubahan bentuk pembayaran atau uang).
+    *   `should return error if update fails`: Menguji penanganan kegagalan kueri update database.
+*   **deleteHewan**
+    *   `should successfully delete the animal qurban`: Memverifikasi penghapusan data hewan qurban dan memicu revalidasi antarmuka.
+    *   `should return error if delete fails`: Menguji penanganan kegagalan saat proses penghapusan data di basis data.
+*   **getHewanQurban**
+    *   `should retrieve animals and handle sapi patungan groups`: Memastikan data hewan dapat ditarik dan dikelompokkan secara terstruktur berdasarkan kelompok sapi patungan.
+    *   `should set penyaluran to 'Campuran (Internal & Luar)' if group members have different values`: Memastikan status penyaluran kelompok sapi diset "Campuran" jika ada anggota kelompok yang menyalurkan secara internal dan luar.
+    *   `should return empty array on failure`: Menguji kembalian array kosong saat terjadi kegagalan pengambilan data hewan.
+*   **getStatistikSapiPatungan**
+    *   `should return group stats and suggest next slot group`: Menghitung kuota kelompok sapi patungan dan menyarankan kelompok aktif yang masih kurang dari 7 orang.
+    *   `should handle error in getStatistikSapiPatungan`: Menguji respon ketika kalkulasi statistik mengalami kegagalan kueri.
+
+#### 2. `app/actions/pengqurban.test.ts` (Suite: `Pengqurban Server Actions` - 10 Tests)
+*   **getPengqurban**
+    *   `should retrieve pengqurban data successfully with parameters`: Memverifikasi penarikan data pengqurban berdasarkan query nama dan tahun Hijriah.
+    *   `should return empty array and success false on database failure`: Menangani kegagalan kueri penarikan data.
+*   **createPengqurban**
+    *   `should successfully create new pengqurban if NKW is unique`: Menguji pembuatan data pendaftar baru jika NKW belum terdaftar dengan parsing no urut.
+    *   `should return error if NKW is already registered`: Menolak pembuatan data pengqurban baru jika NKW yang diinput sudah ada di database.
+    *   `should return success false on database exceptions`: Menangani error crash tak terduga pada basis data saat pembuatan.
+*   **updatePengqurban**
+    *   `should update pengqurban details successfully`: Memverifikasi pembaruan informasi detail profil pengqurban (nama/nomor kontak).
+    *   `should return success false if database update fails`: Menangani error crash database saat pembaruan profil.
+*   **deletePengqurban**
+    *   `should successfully delete the pengqurban`: Memverifikasi penghapusan data pendaftar.
+    *   `should handle relational dependency failure (error P2003)`: Memastikan penghapusan ditolak dan memberikan info relevan jika pengqurban masih terikat dengan hewan qurban.
+    *   `should handle generic delete errors`: Menangani error crash generik saat penghapusan.
+
+#### 3. `app/actions/permohonan-online.test.ts` (Suite: `Permohonan Online Server Actions` - 12 Tests)
+*   **submitPermohonanOnline**
+    *   `should successfully submit permohonan online`: Menguji pendaftaran mandiri oleh shohibul secara online beserta data hewan dan bukti transfer.
+    *   `should handle error in submitPermohonanOnline`: Menangani kegagalan input registrasi online.
+*   **getPermohonanOnline**
+    *   `should retrieve permohonan online list and format dates and currency`: Menguji penampilan list pendaftar online beserta formatting tanggal ISO.
+    *   `should handle error in getPermohonanOnline`: Menangani kegagalan kueri penarikan daftar online.
+*   **verifyPermohonan**
+    *   `should decline permohonan successfully when action is DITOLAK`: Menguji fungsi verifikator menolak pengajuan online.
+    *   `should return success false if permohonan is not found`: Menguji penanganan verifikasi jika ID permohonan tidak valid/tidak ada.
+    *   `should return success false if permohonan is already ACC`: Mencegah verifikasi ulang untuk permohonan yang statusnya sudah disetujui.
+    *   `should clean non-digits from previous NKW when generating a new NKW`: Menguji pembersihan karakter non-angka (seperti `/`) pada NKW sebelumnya untuk penambahan urutan numerik.
+    *   `should handle existing sapi sequences correctly and assign animal sequences correctly`: Menguji penentuan urutan no ID sapi baru pada proses ACC.
+    *   `should suggest next group for sapi patungan and build new group if preceding is full`: Memetakan shohibul sapi patungan ke kelompok yang masih kosong/belum penuh (maksimal 7 slot) secara otomatis.
+    *   `should set lastUrutan sequence increment for non-sapi animal`: Menguji penambahan urutan nomor ID secara berurutan untuk multi-kambing pendaftar.
+    *   `should return success false and catch database transaction errors`: Memastikan pembatalan/rollback transaksi database secara aman jika terjadi error di tengah jalan saat verifikasi.
+
+#### 4. `app/actions/petugas.test.ts` (Suite: `Petugas Server Actions` - 9 Tests)
+*   **createPetugas**
+    *   `should successfully create a new volunteer with incremented sequence id`: Menguji pembuatan petugas jaga baru dengan pembuatan ID berurutan secara otomatis.
+    *   `should handle creating volunteer when no previous volunteer exists`: Menguji inisialisasi ID pertama jika belum ada petugas jaga terdaftar.
+    *   `should return success false on database errors during creation`: Menangani kegagalan kueri saat pembuatan data.
+*   **getPetugasJaga**
+    *   `should retrieve list of volunteers successfully`: Menguji pencarian data petugas jaga aktif.
+    *   `should return empty array on database failure`: Menangani kegagalan kueri pencarian data.
+*   **updatePetugas**
+    *   `should update volunteer info successfully`: Menguji pembaruan profil dan nama petugas jaga.
+    *   `should return success false on update failure`: Menangani kegagalan kueri pembaruan.
+*   **deletePetugas**
+    *   `should successfully delete a volunteer`: Menguji penghapusan data petugas jaga.
+    *   `should return error if deletion fails (e.g. relational constraint)`: Memberikan informasi error jika petugas gagal dihapus karena keterikatan relasi database.
+
+#### 5. `app/actions/security.test.ts` (Suite: `updateHewan Security Access Control Tests` - 4 Tests)
+*   `should fail when user is not authenticated (null session)`: Memastikan server action menolak pembaruan status hewan jika user belum login.
+*   `should fail when authenticated user is not an admin (e.g., role is STAF)`: Memastikan staf non-admin diblokir dari pembaruan status hewan.
+*   `should fail validation when status_hewan is outside the logical enum bounds defined in the PRD`: Menolak status hewan ilegal (misal `"KABUR"`, `"BOCOR"`) untuk menjaga integritas data.
+*   `should succeed and update status when user is an ADMIN and status is in the logical enum`: Mengizinkan admin mengubah status dengan nilai enum valid (`MENUNGGU`, `DISEMBELIH`, `DIDISTRIBUSIKAN`).
+
+#### 6. `app/api/track/route.test.ts` (Suite: `GET /api/track API Router` - 5 Tests)
+*   `should return HTTP status 400 when query is empty or whitespace only`: Menguji validasi input parameter pencarian kosong.
+*   `should return HTTP status 404 when search results are empty`: Mengembalikan 404 jika nomor ID atau nama tidak ditemukan di database.
+*   `should properly mask the shohibul qurban's phone number`: Memastikan nomor telepon disensor secara dinamis di bagian tengah demi keamanan privasi.
+*   `should clean sensitive data and not leak internal panitia/non-public properties to client`: Memastikan data sensitif internal panitia (seperti nominal uang, bukti bayar, biaya operasional) disaring keluar dan tidak bocor ke publik.
+*   `should return HTTP status 500 when database throws an error`: Menangani kegagalan tak terduga database dengan status 500.
+
+#### 7. `app/tracking/page.test.tsx` (Suite: `Pengujian Halaman Tracking Status Hewan Kurban` - 2 Tests)
+*   `Harus menampilkan teks "LUNAS" ketika status pembayaran hewan kurban selesai`: Memverifikasi UI halaman tracking berhasil menampilkan info status lunas.
+*   `Harus menampilkan teks "DISEMBELIH" ketika hewan kurban sudah diproses`: Memverifikasi UI halaman tracking berhasil menampilkan status disembelih.
+
+#### 8. `app/utils/tracking.test.ts` (Suite: `Tracking UI Utility Helpers` - 11 Tests)
+*   **getStepStatus**
+    *   `should return completed for steps equal or prior to current status`: Memverifikasi status stepper langkah selesai.
+    *   `should return active for the step immediately following current status`: Memverifikasi status stepper langkah aktif.
+    *   `should return upcoming for later steps`: Memverifikasi status stepper langkah mendatang.
+    *   `should handle empty status and default to MENUNGGU index`: Menguji fallback status kosong.
+    *   `should handle invalid/unrecognized status (e.g. KABUR) and default to MENUNGGU index`: Menguji fallback status ilegal.
+*   **getStepperColorClass**
+    *   `should return green classes for completed steps`: Memastikan warna hijau terpasang untuk langkah selesai.
+    *   `should return amber pulse classes for active steps`: Memastikan warna amber animasi pulse terpasang untuk langkah aktif.
+    *   `should return gray classes for upcoming steps`: Memastikan warna abu-abu terpasang untuk langkah mendatang.
+*   **getPaymentBadgeColorClass**
+    *   `should return green styling for LUNAS`: Memverifikasi warna badge lunas.
+    *   `should return yellow/amber styling for DP`: Memverifikasi warna badge uang muka (DP).
+    *   `should return red styling for BELUM LUNAS and unknown values`: Memverifikasi warna badge belum lunas/lainnya.
+
+#### 9. `sample.test.tsx` (Suite: `Uji Coba Lingkungan Jest` - 1 Test)
+*   `harus menghitung penjumlahan dasar dengan benar`: Memverifikasi integrasi dasar engine Jest berjalan sukses dengan kalkulasi aritmatika.
+
 
 ---
 

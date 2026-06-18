@@ -34,7 +34,7 @@ jobs:
         push: true
         tags: |
           ${{ secrets.ACR_LOGIN_SERVER }}/qurban-mmi:${{ github.sha }}
-          ${{ secrets.ACR_LOGIN_SERVER }}/qurban-mmi:latest
+          ${{ secrets.ACR_LOGIN_SERVER }}/qurban-mmi:${{ (github.base_ref || github.ref_name) == 'main' && 'latest' || 'staging' }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 

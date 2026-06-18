@@ -69,3 +69,40 @@ Jika Anda atau anggota tim mengalami kegagalan ketika menjalankan pengetesan (mi
    npm test -- --coverage
    ```
    *(Vitest/Jest akan langsung menjalankan seluruh suite pengujian dan merender tabel cakupan kode secara rinci di terminal).*
+
+---
+
+## 🌲 4. Kenalan & Pindah Kapsul Waktu (Branch Management)
+
+Proyek ini menggunakan arsitektur **Parallel Non-Linear Branching** khusus untuk kebutuhan simulasi live demo di depan asdos. Jangan sampai salah kamar ya, gaes! Ini peta jalannya:
+
+### ⏪ 1. Branch Masa Lalu: `archive/before-feature`
+* **Apa ini?** Kondisi aplikasi purba sebelum fitur tracking dibikin. Di sini rute `/tracking` masih Error 404 (Kosong murni).
+* **Kapan dipakai?** Dipakai di AWAL demo sebagai panggung steril awal sebelum kita melakukan aksi sulap penggabungan kode.
+* **Cara pindah ke sini:**
+    ```bash
+    git checkout archive/before-feature
+    ```
+
+### ⏩ 2. Branch Masa Depan: `archive/final-feature`
+* **Apa ini?** Kondisi aplikasi masa depan yang udah matang. Fitur tracking udah lengkap 100%, pengaman NextAuth udah aktif, dan 68 unit tests Vitest udah PASS semua.
+* **Kapan dipakai?** Branch ini dilarang keras buat diutak-atik langsung. Dia cuma bertindak sebagai "sumber fitur" yang bakal kita panggil dan gabungkan ke branch `develop` pas live action di depan asdos.
+* **Cara pindah ke sini:**
+    ```bash
+    git checkout archive/final-feature
+    ```
+
+### 🧪 3. Cara Latihan Simulasi Live Demo Mandiri
+Kalau kamu mau coba latihan akrobat Gitflow ini sendirian di lokal laptopmu sebelum jam presentasi, ini urutan tombolnya:
+```bash
+# Ambil data terbaru dari langit
+git fetch origin
+
+# Masuk ke ruang develop lokal dan paksa reset ke kondisi purba
+git checkout develop
+git reset --hard origin/archive/before-feature
+git clean -fd
+
+# [AKSI LIVE DEMO] Gabungkan fitur masa depan ke develop!
+git merge origin/archive/final-feature --no-ff -m "simulasi: live merge fitur tracking"
+# (BOOM! Folder app/tracking langsung auto-muncul tanpa conflict!)

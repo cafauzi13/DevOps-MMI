@@ -9,8 +9,21 @@ const createJestConfig = nextJest({
 const config: Config = {
   coverageProvider: 'v8',
   testEnvironment: 'jsdom',
-  // Menghubungkan ke file setup yang akan dibuat
   setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/$1',
+  },
+  collectCoverageFrom: [
+    'app/actions/hewan.ts',
+    'app/actions/pengqurban.ts',
+    'app/actions/permohonan-online.ts',
+    'app/actions/petugas.ts',
+    'app/api/track/route.ts',
+    'app/utils/tracking.ts',
+  ],
+  coveragePathIgnorePatterns: [
+    '<rootDir>/app/lib/',
+  ],
 }
 
 export default createJestConfig(config)

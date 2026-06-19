@@ -137,3 +137,160 @@ Dokumen ini berisi hasil pemindaian (*scanning*) dinamis secara utuh terhadap be
 *   **Path**: `sample.test.tsx`
 *   **Suite**: `Uji Coba Lingkungan Jest`
     *   `harus menghitung penjumlahan dasar dengan benar`: Memverifikasi integrasi dasar engine Jest berjalan sukses dengan kalkulasi aritmatika.
+
+---
+
+## 🛠️ VALIDASI SLIDE PRESENTASI & TROUBLESHOOTING PIPELINE
+
+Berikut adalah analisis pencocokan (*mapping*) dan pembuktian fisik dari kodingan proyek terhadap poin-poin yang dideklarasikan pada Slide Presentasi Kelompok kami.
+
+### 🟥 TAHAP 1: VALIDASI DATA UTAMA PIPELINE (Slide Hal 4 & 6)
+
+#### 1. GitHub Actions Workflow
+*   **Berkas Fisik**: `.github/workflows/cd.yml` (dan `.github/workflows/ci.yml`)
+*   **Baris Pemicu (Trigger)**:
+    Pipa CD di `.github/workflows/cd.yml` dikonfigurasi untuk dipicu pada kejadian `push` dan `pull_request` pada branch `main` dan `develop`:
+    ```yaml
+    on:
+      push:
+        branches: [ "main", "develop" ]
+      pull_request:
+        branches: [ "main", "develop" ]
+    ```
+    Ini menjamin bahwa setiap kali ada penggabungan fitur baru atau integrasi kode, alur kerja build dan deployment dijalankan secara otomatis.
+
+#### 2. GitHub Actions Cache (`type=gha`)
+*   **Berkas Fisik**: `.github/workflows/cd.yml` (Baris 38-39)
+*   **Bukti Skrip**:
+    Pada tahap `Build dan push Docker image` (menggunakan action `docker/build-push-action@v5`), cache Docker memanfaatkan internal engine GitHub Actions untuk mempercepat build selanjutnya:
+    ```yaml
+    cache-from: type=gha
+    cache-to: type=gha,mode=max
+    ```
+    Metode `type=gha` ini menyimpan layer kontainer langsung ke penyimpanan aman GitHub Actions, menghindari proses unduhan ulang package npm atau penyusunan ulang layer OS dari awal jika tidak ada perubahan.
+
+#### 3. Azure Container Registry (ACR) Privat
+*   **Berkas Fisik**: `.github/workflows/cd.yml` (Baris 23-28)
+*   **Bukti Skrip**:
+    Akses otentikasi login ACR dilakukan secara aman menggunakan *secrets* GitHub yang menyimpan variabel kredensial server, nama pengguna, dan kata sandi admin registri kontainer:
+    ```yaml
+    - name: Login ke Azure Container Registry (ACR)
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
+    ```
+
+#### 4. Azure App Service Slot Deployment (Isolasi Staging-Prod)
+*   **Berkas Fisik**: `.github/workflows/cd.yml` (Baris 41-56)
+*   **Bukti Skrip**:
+    *   **Isolasi Branch `develop` ke Staging Slot**:
+        ```yaml
+        - name: Deploy ke Azure Staging Slot
+          if: (github.base_ref || github.ref_name) == 'develop'
+          uses: azure/webapps-deploy@v2
+          with:
+            app-name: 'qurban-mmi' 
+            slot-name: 'staging'
+            publish-profile: ${{ secrets.AZURE_STAGING_CREDENTIALS }}
+            images: '${{ secrets.ACR_LOGIN_SERVER }}/qurban-mmi:${{ github.sha }}'
+        ```
+    *   **Isolasi Branch `main` ke Production Slot**:
+        ```yaml
+        - name: Deploy ke Azure Production Slot
+          if: (github.base_ref || github.ref_name) == 'main'
+          uses: azure/webapps-deploy@v2
+          with:
+            app-name: 'qurban-mmi'
+            publish-profile: ${{ secrets.AZURE_PROD_CREDENTIALS }}
+            images: '${{ secrets.ACR_LOGIN_SERVER }}/qurban-mmi:${{ github.sha }}'
+        ```
+    Dengan pemisahan ini, branch `develop` (tempat penggabungan fitur baru saat demo) didesentralisasi hanya ke slot `staging` via gembok `AZURE_STAGING_CREDENTIALS` tanpa risiko merusak slot utama produksi.
+
+---
+
+### 🟨 TAHAP 2: VALIDASI RESOLUSI KENDALA CI / STANDAR KODE (Slide Hal 10 - 14)
+
+#### 1. Let to Const Fix
+*   **Berkas Fisik**: `components/admin/HewanActionButtons.tsx` (misalnya baris 81, 84, 128, 162, 197)
+*   **Bukti Implementasi**:
+    Variabel internal React yang menampung daftar parsed name (`parsedNames`), payload, respon database (`res`), dan variabel daftar anggota sapi patungan (`membersList`) dideklarasikan secara konsisten menggunakan kata kunci `const` alih-alih `let`.
+    ```typescript
+    const parsedNames = ["", "", "", "", "", "", ""];
+    const payload = { ...hwn, ... };
+    const res = await updateHewan(selectedMember.id_hewan, payload);
+    const membersList = data.isGroup ? data.members : [data];
+    ```
+    Ini menjaga imutabilitas data dan menaati aturan ESLint `@typescript-eslint/prefer-const` yang sebelumnya sempat menghasilkan kegagalan build (Exit Code 1).
+
+#### 2. Unescaped Entity Fix
+*   **Berkas Fisik**: `app/tracking/page.tsx` (Baris 184)
+*   **Bukti Kodingan**:
+    Penggunaan karakter kutip tunggal (`'`) pada tulisan teks JSX halaman tracking status yang sebelumnya memicu warning compiler ESLint diselesaikan dengan mengubahnya menjadi entitas HTML `&apos;`:
+    ```typescript
+    <p className="text-[10px] text-gray-400 font-bold mt-0.5 leading-normal">
+      Penyembelihan syar&apos;i oleh jagal resmi MMI di area jagal.
+    </p>
+    ```
+
+#### 3. Node.js Deprecation Bypass
+*   **Berkas Fisik**: `.github/workflows/cd.yml` (Baris 9-10)
+*   **Bukti Kodingan**:
+    Untuk membungkam peringatan tentang penghentian dukungan (*deprecation warning*) Node.js v16 pada runner GitHub Actions, variabel lingkungan global dipasang tepat di bawah pemicu `on:`:
+    ```yaml
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    ```
+    Ini memaksa seluruh aksi JavaScript dalam pipeline CD untuk menggunakan runtime Node.js v24 yang aman dan mutakhir.
+
+---
+
+### 🟩 TAHAP 3: VALIDASI RESOLUSI KENDALA CD & CLOUD CRASH (Slide Hal 15 - 16)
+
+#### 1. Port Mismatch Fix
+*   **Posisi Implementasi**: Azure App Settings (`WEBSITES_PORT = 3000`)
+*   **Logika & Fungsi**:
+    Kontainer Docker Next.js pada `Dockerfile` dikonfigurasi untuk mengekspos dan berjalan pada port 3000 (`EXPOSE 3000`, `ENV PORT 3000`). Azure Web App for Containers secara bawaan mencoba melakukan routing trafik HTTP eksternal ke port 80/8080.
+    Dengan mendefinisikan variabel lingkungan `WEBSITES_PORT` bernilai `3000` di konfigurasi App Service Azure, router Azure diselaraskan untuk mengarahkan seluruh lalu lintas ke port internal kontainer 3000, menghilangkan error timeout koneksi.
+
+#### 2. ImagePullUnauthorized Fix
+*   **Posisi Implementasi**: Konfigurasi Otentikasi Registri Azure (`DOCKER_REGISTRY_SERVER_*`)
+*   **Logika & Fungsi**:
+    Ketika Azure App Service mencoba menarik Docker image dari Azure Container Registry (ACR) privat, ia membutuhkan hak akses. Error `ImagePullUnauthorized` diselesaikan dengan mengaktifkan akses *Admin User* pada panel akses kontrol ACR, kemudian mengintegrasikan variabel konfigurasi berikut pada Azure App Settings secara manual:
+    *   `DOCKER_REGISTRY_SERVER_URL` = Server Login ACR (`<nama-acr>.azurecr.io`)
+    *   `DOCKER_REGISTRY_SERVER_USERNAME` = Kredensial Username Admin ACR
+    *   `DOCKER_REGISTRY_SERVER_PASSWORD` = Kredensial Password Admin ACR
+    Ini memungkinkan Azure App Service melakukan *pull* image dengan aman setiap kali ada deployment baru.
+
+#### 3. Inkompatibilitas Alpine Linux Fix
+*   **Berkas Fisik**: `Dockerfile` (Baris 2, 10, 19)
+*   **Logika & Fungsi**:
+    Penggunaan base image minimal berbasis Alpine Linux (`node:20-alpine`) sering memicu kegagalan startup kontainer akibat inkompatibilitas dengan pustaka native C/C++ yang dibutuhkan Prisma ORM (misalnya dependensi `glibc` dan `libssl.so`).
+    Masalah diselesaikan dengan mengganti base image kontainer ke distribusi berbasis Debian yang kompatibel dan stabil:
+    ```dockerfile
+    FROM node:20-slim AS deps
+    ```
+    Ditambah dengan instalasi modul sertifikat keamanan dan OpenSSL secara eksplisit pada layer OS kontainer:
+    ```dockerfile
+    RUN apt-get update && apt-get install -y openssl ca-certificates && rm -rf /var/lib/apt/lists/*
+    ```
+
+#### 4. Restriksi Advisory Lock Database Fix
+*   **Berkas Fisik**: `prisma/schema.prisma` (Baris 9-13)
+*   **Logika & Fungsi**:
+    Supabase Connection Pooler (di port transaction `6543`) membatasi penggunaan *advisory locks* yang digunakan Prisma untuk memverifikasi migrasi, memicu Timeout Error (P1002).
+    Solusinya adalah memisahkan string koneksi langsung (*direct connection string*) bypass ke port Supabase asli `5432` di `schema.prisma`:
+    ```prisma
+    datasource db {
+      provider  = "postgresql"
+      url       = env("DATABASE_URL")
+      directUrl = env("DIRECT_URL")
+    }
+    ```
+    Dan dalam proses seed awal di staging slot, menggunakan perintah sinkronisasi skema langsung tanpa membuat riwayat migrasi yang lambat:
+    ```bash
+    npx prisma db push --force-reset
+    ```
+    Ini menghapus konflik kunci migrasi dan mempercepat pembersihan data tanpa ada bentrokan koneksi pooler.
+
